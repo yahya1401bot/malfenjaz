@@ -654,7 +654,7 @@ async function exportPdf(){
     }
   }
 
-  const cvIsPdf = data.cv.file && (data.cv.file.startsWith('data:application/pdf') || (data.cv.fileName && /\.pdf$/i.test(data.cv.fileName)));
+  const cvIsPdf = data.cv.file && !data.cv.file.startsWith('data:image');
   if(cvIsPdf){
     try{
       if(!window.pdfjsLib) throw new Error('مكتبة قراءة PDF لم تُحمّل بعد — تأكد من وجود اتصال إنترنت');
@@ -669,6 +669,7 @@ async function exportPdf(){
       });
     }catch(e){
       console.error('CV PDF export conversion failed:', e);
+      alert('تعذّر تحويل ملف السيرة الذاتية لصور للطباعة. تأكد من الإنترنت وحاول تصدّر مرة أخرى.');
     }
   }
 
@@ -736,17 +737,35 @@ function addItem(key){
   }
 }
 
+function dataUrlToBlob(dataUrl){
+  const parts = dataUrl.split(',');
+  const mimeMatch = parts[0].match(/data:(.*?);base64/);
+  const mime = mimeMatch ? mimeMatch[1] : 'application/octet-stream';
+  const binary = atob(parts[1]);
+  const bytes = new Uint8Array(binary.length);
+  for(let i=0; i<binary.length; i++){ bytes[i] = binary.charCodeAt(i); }
+  return new Blob([bytes], {type: mime});
+}
+
 function previewFile(key, id){
-  let img;
+  let img, fileName;
   if(key==='cv'){
     img = data.cv.file;
+    fileName = data.cv.fileName;
   } else {
     const item = (data[key]||[]).find(i=>i.id===id);
     img = item && item.img;
   }
   if(!img) return;
-  if(img.startsWith('data:application/pdf')){
-    window.open(img, '_blank');
+  const looksLikePdf = img.startsWith('data:application/pdf') || (fileName && /\.pdf$/i.test(fileName));
+  if(looksLikePdf){
+    try{
+      const blob = dataUrlToBlob(img);
+      const blobUrl = URL.createObjectURL(blob);
+      window.open(blobUrl, '_blank');
+    }catch(e){
+      alert('تعذّر فتح الملف. جرّب تحديث الصفحة والمحاولة مرة أخرى.');
+    }
   } else {
     document.getElementById('previewImg').src = img;
     document.getElementById('previewModal').classList.remove('hidden');
