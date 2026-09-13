@@ -1,739 +1,219 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ملف إنجاز المعلم</title>
-<style>
-  :root{
-    --bg:#f5f4f0; --card:#ffffff; --border:#e2e0d8; --text:#2c2c2a; --muted:#6b6a63;
-    --accent:#0f6e56; --accent-light:#e1f5ee; --danger:#993c1d; --danger-light:#faece7;
-  }
-  *{box-sizing:border-box;}
-  body{margin:0; background:var(--bg); color:var(--text); font-family:"Segoe UI", Tahoma, Arial, sans-serif; line-height:1.7;}
-  .wrap{max-width:720px; margin:0 auto; padding:16px;}
-  header.top{background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px 18px; margin-bottom:16px; display:flex; align-items:center; gap:14px; flex-wrap:wrap;}
-  .avatar{width:52px; height:52px; border-radius:50%; background:var(--accent-light); color:var(--accent); display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:600; flex-shrink:0;}
-  header.top .info{flex:1; min-width:0;}
-  header.top h1{font-size:17px; margin:0 0 2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-  header.top p{font-size:13px; color:var(--muted); margin:0;}
-  .edit-name{border:1px solid var(--border); background:var(--card); border-radius:8px; padding:6px 10px; font-size:12px; cursor:pointer; color:var(--muted);}
-  .progress-bar{height:6px; background:var(--bg); border-radius:4px; overflow:hidden; margin-top:10px;}
-  .progress-fill{height:100%; background:var(--accent); transition:width .3s;}
-
-  .branch-title{font-size:13px; color:var(--muted); margin:22px 4px 8px;}
-  .section{background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px 18px; margin-bottom:12px;}
-  .section h2{font-size:15.5px; margin:0 0 4px; display:flex; align-items:center; justify-content:space-between;}
-  .section .count{font-size:12px; color:var(--accent); background:var(--accent-light); padding:2px 10px; border-radius:20px;}
-  .section .sub{font-size:12.5px; color:var(--muted); margin:0 0 12px;}
-
-  textarea, input[type=text]{width:100%; border:1px solid var(--border); border-radius:8px; padding:9px 10px; font-size:14px; font-family:inherit; background:var(--bg); color:var(--text);}
-  textarea{resize:vertical; min-height:54px;}
-  label.small{font-size:12px; color:var(--muted); display:block; margin:8px 0 4px;}
-  .field-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
-
-  .item{border:1px solid var(--border); border-radius:10px; padding:10px; margin-top:10px; display:flex; gap:10px;}
-  .item img{width:64px; height:64px; object-fit:cover; border-radius:8px; flex-shrink:0; background:var(--bg);}
-  .item .body{flex:1; min-width:0;}
-  .item .note{font-size:13.5px; margin:0 0 4px; word-break:break-word;}
-  .item .date{font-size:11.5px; color:var(--muted);}
-  .item .del{border:none; background:none; color:var(--danger); font-size:12px; cursor:pointer; padding:2px 6px; flex-shrink:0; align-self:flex-start;}
-
-  .add-box{border:1px dashed var(--border); border-radius:10px; padding:12px; margin-top:12px; background:var(--bg);}
-  .add-box input[type=file]{font-size:12.5px; width:100%; margin-bottom:8px;}
-  .add-box .thumb{max-width:100px; max-height:100px; border-radius:8px; margin-bottom:8px; display:none;}
-  .btn{border:none; border-radius:8px; padding:9px 16px; font-size:13.5px; cursor:pointer; font-weight:600;}
-  .btn-primary{background:var(--accent); color:#fff;}
-  .btn-outline{background:#fff; border:1px solid var(--border); color:var(--text);}
-  .save-msg{font-size:12px; color:var(--accent); margin-top:8px; display:none;}
-  .pdf-export-temp{display:none;}
-
-  .modal-bg{position:fixed; inset:0; background:rgba(0,0,0,.4); display:flex; align-items:center; justify-content:center; padding:20px; z-index:50;}
-  .modal{background:#fff; border-radius:14px; padding:22px; max-width:360px; width:100%;}
-  .modal h3{margin:0 0 6px; font-size:16px;}
-  .modal p{font-size:13px; color:var(--muted); margin:0 0 14px;}
-  .hidden{display:none !important;}
-  footer.note{font-size:11.5px; color:var(--muted); text-align:center; margin:24px 0 8px;}
-  .export-bar{position:sticky; bottom:0; background:var(--card); border:1px solid var(--border); border-radius:14px; padding:12px; margin:16px 0; text-align:center;}
-  .export-bar .btn{width:100%; padding:12px;}
-  @media print{
-    body{background:#fff;}
-    .edit-name, .add-box, .export-bar, .del, #setupModal, input[type=file], .upload-controls, #thumb-photo, #cv-attached, .form-action-btn{display:none !important;}
-    .item{flex-direction:column; align-items:flex-start;}
-    .item img{width:100%; max-width:100%; height:auto; object-fit:contain; border:1px solid var(--border); margin-top:6px;}
-    .thumb{width:100% !important; max-width:100% !important; height:auto !important; max-height:none !important; object-fit:contain; border:1px solid var(--border); margin-top:6px;}
-    .pdf-export-temp{display:block !important; width:100% !important; max-width:100% !important; height:auto !important; object-fit:contain; border:1px solid var(--border); margin-top:6px;}
-    .section{border:1px solid #ccc;}
-  }
-</style>
-</head>
-<body>
-
-<div id="setupModal" class="modal-bg">
-  <div class="modal">
-    <h3>مرحباً بك</h3>
-    <p>هذا ملفك الخاص كمعلم. عبّي اسمك عشان نبدأ — بياناتك تُحفظ تلقائياً على جهازك ولن تختفي عند الرجوع لاحقاً.</p>
-    <input type="text" id="setupName" placeholder="اسم المعلم/ـة" style="margin-bottom:10px;">
-    <button class="btn btn-primary" style="width:100%" onclick="finishSetup()">بدء ملفي</button>
-  </div>
-</div>
-
-<div class="wrap">
-
-  <header class="top">
-    <div class="avatar" id="avatarLetter">م</div>
-    <div class="info">
-      <h1 id="teacherName">—</h1>
-      <p>مدرسة كعب بن مالك بالأودية</p>
-      <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
-    </div>
-    <div style="display:flex; flex-direction:column; gap:6px; align-items:stretch; flex-shrink:0;">
-      <button class="edit-name" onclick="editName()">تعديل الاسم</button>
-      <button class="edit-name" id="btn-drive" onclick="connectDrive()">ربط Google Drive</button>
-    </div>
-  </header>
-
-  <div class="branch-title">الهوية والسيرة</div>
-
-  <div class="section" id="sec-personal">
-    <h2>البيانات الشخصية <button class="edit-name" id="btn-edit-personal" onclick="togglePersonalEdit()">تعديل</button></h2>
-    <p class="sub">الاسم والمؤهل والتخصص</p>
-
-    <div class="upload-controls">
-      <label class="small">الصورة الشخصية</label>
-      <div style="display:flex; align-items:center; gap:10px;">
-        <img class="thumb" id="thumb-photo" style="width:56px; height:56px; border-radius:50%; object-fit:cover; margin-bottom:0;">
-      </div>
-      <input type="file" accept="image/*" capture="user" id="input-camera-photo" onchange="previewImg('photo', this)">
-      <label class="small" style="margin-top:4px;">أو اختر من المعرض</label>
-      <input type="file" accept="image/*" id="input-file-photo" onchange="previewImg('photo', this)">
-      <button class="btn btn-outline" type="button" onclick="clearPreview('photo')" style="padding:6px 10px; font-size:12px; margin-top:6px;">إزالة</button>
-    </div>
-
-    <div class="field-grid" style="margin-top:14px;">
-      <div><label class="small">المؤهل العلمي</label><input type="text" id="f-qual"></div>
-      <div><label class="small">التخصص</label><input type="text" id="f-spec"></div>
-      <div><label class="small">سنوات الخبرة</label><input type="text" id="f-exp"></div>
-    </div>
-    <button class="btn btn-primary form-action-btn" style="margin-top:12px" id="btn-save-personal" onclick="savePersonal()">حفظ البيانات</button>
-    <div class="save-msg" id="msg-personal">تم الحفظ</div>
-  </div>
-
-  <div class="section" id="sec-cv">
-    <h2>السيرة الذاتية</h2>
-    <p class="sub">الرؤية والرسالة</p>
-    <label class="small">الرؤية والرسالة المهنية</label>
-    <textarea id="f-vision" placeholder="اكتب رؤيتك ورسالتك كمعلم..."></textarea>
-    <div class="upload-controls">
-      <label class="small">إرفاق ملف السيرة الذاتية (صورة أو PDF) — اختياري</label>
-      <input type="file" accept="image/*,application/pdf" id="input-file-cv" onchange="previewImg('cv')">
-      <div style="display:flex; align-items:center; gap:8px;">
-        <img class="thumb" id="thumb-cv" style="margin-bottom:0;">
-        <button class="btn btn-outline" type="button" onclick="clearPreview('cv')" style="padding:6px 10px; font-size:12px;">إزالة</button>
-      </div>
-    </div>
-    <div id="cv-attached" style="margin-top:8px; display:none; align-items:center; gap:8px;">
-      <span class="save-msg" id="cv-attached-label" style="display:inline; color:var(--muted);">ملف مرفق حالياً</span>
-      <button class="del" onclick="deleteCvFile()">حذف الملف</button>
-    </div>
-    <img class="thumb" id="cv-saved-image" style="margin-top:8px; display:none;">
-    <button class="btn btn-primary form-action-btn" style="margin-top:12px" onclick="saveCv()">حفظ</button>
-    <div class="save-msg" id="msg-cv">تم الحفظ</div>
-  </div>
-
-  <div class="branch-title">الأداء والتدريس</div>
-
-  <div class="section" id="sec-performance">
-    <h2>معايير الأداء <span class="count" id="count-performance">0</span></h2>
-    <p class="sub">شواهد معايير الأداء الوظيفي</p>
-    <div id="list-performance"></div>
-    <div class="add-box">
-      <label class="small">اسم المعيار</label>
-      <select id="input-title-performance" onchange="toggleOtherStandard()" style="width:100%; border:1px solid var(--border); border-radius:8px; padding:9px 10px; font-size:14px; background:var(--bg); color:var(--text);">
-        <option value="">اختر المعيار</option>
-        <option value="أداء الواجبات الوظيفية">أداء الواجبات الوظيفية</option>
-        <option value="التفاعل مع المجتمع المهني">التفاعل مع المجتمع المهني</option>
-        <option value="التفاعل مع أولياء الأمور">التفاعل مع أولياء الأمور</option>
-        <option value="تنويع استراتيجيات التدريس">تنويع استراتيجيات التدريس</option>
-        <option value="تحسين نتائج المتعلمين">تحسين نتائج المتعلمين</option>
-        <option value="إعداد وتنفيذ خطة التعلم">إعداد وتنفيذ خطة التعلم</option>
-        <option value="توظيف تقنيات ووسائل التعلم">توظيف تقنيات ووسائل التعلم</option>
-        <option value="تهيئة البيئة التعليمية والإدارة الصفية">تهيئة البيئة التعليمية والإدارة الصفية</option>
-        <option value="__other__">أخرى (اكتب بنفسك)</option>
-      </select>
-      <input type="text" id="input-title-performance-other" placeholder="اكتب اسم المعيار" style="margin-top:8px; display:none;">
-      <label class="small">صورة الشاهد</label>
-      <input type="file" accept="image/*" capture="environment" id="input-camera-performance" onchange="previewImg('performance', this)">
-      <label class="small" style="margin-top:4px;">أو اختر من المعرض</label>
-      <input type="file" accept="image/*,application/pdf" id="input-file-performance" onchange="previewImg('performance', this)">
-      <div style="display:flex; align-items:center; gap:8px;">
-        <img class="thumb" id="thumb-performance" style="margin-bottom:0;">
-        <button class="btn btn-outline" type="button" onclick="clearPreview('performance')" style="padding:6px 10px; font-size:12px;">إزالة</button>
-      </div>
-      <label class="small">ملاحظة توضيحية</label>
-      <textarea id="input-note-performance" placeholder="اكتب توضيحاً عن هذا الشاهد..."></textarea>
-      <button class="btn btn-primary" style="margin-top:8px" onclick="addItem('performance')">إضافة شاهد</button>
-    </div>
-  </div>
-
-  <div class="section" id="sec-studentWork">
-    <h2>أعمال الطلاب <span class="count" id="count-studentWork">0</span></h2>
-    <p class="sub">واجبات ومشاريع وأنشطة</p>
-    <div id="list-studentWork"></div>
-    <div class="add-box">
-      <label class="small">صورة الواجب أو النشاط أو المشروع</label>
-      <input type="file" accept="image/*" capture="environment" id="input-camera-studentWork" onchange="previewImg('studentWork', this)">
-      <label class="small" style="margin-top:4px;">أو اختر من المعرض</label>
-      <input type="file" accept="image/*,application/pdf" id="input-file-studentWork" onchange="previewImg('studentWork', this)">
-      <div style="display:flex; align-items:center; gap:8px;">
-        <img class="thumb" id="thumb-studentWork" style="margin-bottom:0;">
-        <button class="btn btn-outline" type="button" onclick="clearPreview('studentWork')" style="padding:6px 10px; font-size:12px;">إزالة</button>
-      </div>
-      <label class="small">ملاحظة توضيحية عن الصورة</label>
-      <textarea id="input-note-studentWork" placeholder="مثال: نشاط جماعي لمادة العلوم - الصف الرابع"></textarea>
-      <button class="btn btn-primary" style="margin-top:8px" onclick="addItem('studentWork')">إضافة</button>
-    </div>
-  </div>
-
-  <div class="branch-title">الشواهد والتطوير</div>
-
-  <div class="section" id="sec-certificates">
-    <h2>الشهادات والتكريم <span class="count" id="count-certificates">0</span></h2>
-    <p class="sub">خطابات شكر وتقدير</p>
-    <div id="list-certificates"></div>
-    <div class="add-box">
-      <label class="small">صورة الشهادة أو خطاب الشكر</label>
-      <input type="file" accept="image/*" capture="environment" id="input-camera-certificates" onchange="previewImg('certificates', this)">
-      <label class="small" style="margin-top:4px;">أو اختر من المعرض</label>
-      <input type="file" accept="image/*,application/pdf" id="input-file-certificates" onchange="previewImg('certificates', this)">
-      <div style="display:flex; align-items:center; gap:8px;">
-        <img class="thumb" id="thumb-certificates" style="margin-bottom:0;">
-        <button class="btn btn-outline" type="button" onclick="clearPreview('certificates')" style="padding:6px 10px; font-size:12px;">إزالة</button>
-      </div>
-      <label class="small">ملاحظة توضيحية</label>
-      <textarea id="input-note-certificates" placeholder="مثال: خطاب شكر من إدارة المدرسة"></textarea>
-      <button class="btn btn-primary" style="margin-top:8px" onclick="addItem('certificates')">إضافة</button>
-    </div>
-  </div>
-
-  <div class="section" id="sec-development">
-    <h2>التطوير المهني <span class="count" id="count-development">0</span></h2>
-    <p class="sub">دورات وورش عمل</p>
-    <div id="list-development"></div>
-    <div class="add-box">
-      <label class="small">صورة الشهادة التدريبية</label>
-      <input type="file" accept="image/*" capture="environment" id="input-camera-development" onchange="previewImg('development', this)">
-      <label class="small" style="margin-top:4px;">أو اختر من المعرض</label>
-      <input type="file" accept="image/*,application/pdf" id="input-file-development" onchange="previewImg('development', this)">
-      <div style="display:flex; align-items:center; gap:8px;">
-        <img class="thumb" id="thumb-development" style="margin-bottom:0;">
-        <button class="btn btn-outline" type="button" onclick="clearPreview('development')" style="padding:6px 10px; font-size:12px;">إزالة</button>
-      </div>
-      <label class="small">ملاحظة توضيحية</label>
-      <textarea id="input-note-development" placeholder="مثال: دورة توظيف التقنية في التعليم"></textarea>
-      <button class="btn btn-primary" style="margin-top:8px" onclick="addItem('development')">إضافة</button>
-    </div>
-  </div>
-
-  <div class="export-bar">
-    <button class="btn btn-primary" id="btn-export" onclick="exportPdf()">تصدير الملف PDF</button>
-  </div>
-
-  <footer class="note">يُحفظ كل شيء تلقائياً على هذا الجهاز والمتصفح. لا تمسح بيانات المتصفح حتى لا يضيع ملفك.<br>يمكنك تصدير PDF في أي وقت وبأي عدد مرات — كل تصدير يعكس آخر تحديث دون التأثير على البيانات المحفوظة.</footer>
-</div>
-
-<script src="https://accounts.google.com/gsi/client"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script>
-if(window.pdfjsLib){
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-}
-</script>
-<script>
-const STORAGE_KEY = 'malaf_injaz_muallim_v1';
-
-const GOOGLE_CLIENT_ID = '49399330082-cbhboe0ii1htbcs2q9e8bk04t2g0okq9.apps.googleusercontent.com';
-const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
-const DRIVE_FILENAME = 'malaf_injaz_muallim_data.json';
-let driveAccessToken = null;
-let driveFileId = null;
-let tokenClient = null;
-let driveSyncing = false;
-
-function connectDrive(){
-  if(!window.google || !google.accounts || !google.accounts.oauth2){
-    alert('يرجى الانتظار قليلاً حتى يكتمل تحميل الصفحة (تحتاج إنترنت)، ثم المحاولة مرة أخرى');
-    return;
-  }
-  if(!tokenClient){
-    tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: GOOGLE_CLIENT_ID,
-      scope: DRIVE_SCOPE,
-      callback: (resp)=>{
-        if(resp.error){ alert('تعذر تسجيل الدخول: ' + resp.error); return; }
-        driveAccessToken = resp.access_token;
-        setDriveStatus(true);
-        driveLoadFromCloud();
-      }
-    });
-  }
-  tokenClient.requestAccessToken();
-}
-
-function setDriveStatus(connected){
-  const btn = document.getElementById('btn-drive');
-  if(btn) btn.textContent = connected ? 'متصل بـ Drive ✓' : 'ربط Google Drive';
-}
-
-async function driveFindFileId(){
-  const res = await fetch('https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=' + encodeURIComponent(`name='${DRIVE_FILENAME}'`) + '&fields=files(id,name)', {
-    headers:{ Authorization: 'Bearer ' + driveAccessToken }
-  });
-  const json = await res.json();
-  return (json.files && json.files.length) ? json.files[0].id : null;
-}
-
-async function driveLoadFromCloud(){
-  driveSyncing = true;
-  try{
-    driveFileId = await driveFindFileId();
-    if(driveFileId){
-      const res = await fetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`, {
-        headers:{ Authorization: 'Bearer ' + driveAccessToken }
-      });
-      const cloudData = await res.json();
-      if(cloudData && typeof cloudData === 'object'){
-        data = cloudData;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-        render();
-      }
-    } else {
-      await driveSaveToCloud();
-    }
-  }catch(e){
-    console.error('Drive load failed:', e);
-    alert('تعذر تحميل بياناتك من Drive. تأكد من الإنترنت وحاول تربط مرة أخرى.');
-  }
-  driveSyncing = false;
-}
-
-async function driveSaveToCloud(){
-  if(!driveAccessToken) return;
-  const content = JSON.stringify(data);
-  try{
-    if(driveFileId){
-      await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, {
-        method:'PATCH',
-        headers:{ Authorization:'Bearer ' + driveAccessToken, 'Content-Type':'application/json' },
-        body: content
-      });
-    } else {
-      const metadata = { name: DRIVE_FILENAME, parents: ['appDataFolder'] };
-      const boundary = 'malaf_injaz_boundary';
-      const body =
-        `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n` +
-        `--${boundary}\r\nContent-Type: application/json\r\n\r\n${content}\r\n--${boundary}--`;
-      const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {
-        method:'POST',
-        headers:{ Authorization:'Bearer ' + driveAccessToken, 'Content-Type':'multipart/related; boundary=' + boundary },
-        body
-      });
-      const json = await res.json();
-      driveFileId = json.id;
-    }
-  }catch(e){
-    console.error('Drive save failed:', e);
-  }
-}
-
-function loadData(){
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if(raw){ try{ return JSON.parse(raw); }catch(e){} }
-  return { teacherName:'', personal:{qual:'',spec:'',exp:'',photo:null}, cv:{vision:'', file:null},
-           performance:[], studentWork:[], certificates:[], development:[] };
-}
-let data = loadData();
-
-function save(){
-  let localOk = true;
-  try{
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  }catch(e){
-    localOk = false;
-  }
-
-  if(driveAccessToken && !driveSyncing){ driveSaveToCloud(); }
-
-  if(!localOk && !driveAccessToken){
-    alert('تعذّر الحفظ. مساحة تخزين المتصفح المحلي امتلأت (منفصلة عن مساحة Drive). اضغط "ربط Google Drive" فوق الصفحة ليعتمد الحفظ على درايفك بدلاً من المتصفح، أو جرّب ملف أصغر.');
-    return false;
-  }
-  return true;
-}
-
-function flashMsg(id){
-  const el = document.getElementById(id);
-  if(!el) return;
-  el.style.display='block';
-  setTimeout(()=>el.style.display='none', 1500);
-}
-
-function todayStr(){
-  const d = new Date();
-  return d.toLocaleDateString('ar-SA-u-ca-gregory', {year:'numeric', month:'long', day:'numeric'});
-}
-
-function render(){
-  document.getElementById('teacherName').textContent = data.teacherName || 'معلم';
-  const avatarEl = document.getElementById('avatarLetter');
-  if(data.personal.photo){
-    avatarEl.innerHTML = `<img src="${data.personal.photo}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
-  } else {
-    avatarEl.textContent = (data.teacherName||'م').trim().charAt(0);
-  }
-  const photoThumb = document.getElementById('thumb-photo');
-  if(data.personal.photo){ photoThumb.src = data.personal.photo; photoThumb.style.display='block'; }
-  else { photoThumb.style.display='none'; photoThumb.removeAttribute('src'); }
-
-  document.getElementById('f-qual').value = data.personal.qual||'';
-  document.getElementById('f-spec').value = data.personal.spec||'';
-  document.getElementById('f-exp').value = data.personal.exp||'';
-  document.getElementById('f-vision').value = data.cv.vision||'';
-  document.getElementById('cv-attached').style.display = data.cv.file ? 'flex' : 'none';
-  document.getElementById('cv-attached-label').textContent = data.cv.file ? ('ملف مرفق: ' + (data.cv.fileName||'بدون اسم')) : '';
-  const cvSavedImg = document.getElementById('cv-saved-image');
-  const cvIsImg = data.cv.file && data.cv.file.startsWith('data:image');
-  if(cvIsImg){ cvSavedImg.src = data.cv.file; cvSavedImg.style.display='block'; }
-  else { cvSavedImg.style.display='none'; cvSavedImg.removeAttribute('src'); }
-
-  ['performance','studentWork','certificates','development'].forEach(key=>{
-    const listEl = document.getElementById('list-'+key);
-    listEl.innerHTML='';
-    (data[key]||[]).forEach(item=>{
-      try{
-        const div = document.createElement('div');
-        div.className='item';
-        const isPdf = item.img && item.img.startsWith('data:application/pdf');
-        div.innerHTML = `
-          ${item.img && !isPdf ? `<img src="${item.img}">` : ''}
-          ${isPdf ? `<div class="pdf-badge" data-key="${key}" data-id="${item.id}" style="width:64px; height:64px; border-radius:8px; background:var(--accent-light); color:var(--accent); display:flex; align-items:center; justify-content:center; font-size:11px; flex-shrink:0;">PDF</div>` : ''}
-          <div class="body">
-            ${item.title ? `<p class="note" style="font-weight:600">${escapeHtml(item.title)}</p>` : ''}
-            <p class="note">${escapeHtml(item.note||'')}</p>
-            <p class="date">${item.date}</p>
-          </div>
-          <button class="del" onclick="deleteItem('${key}','${item.id}')">حذف</button>`;
-        listEl.appendChild(div);
-      }catch(err){ console.error('render item error', key, item, err); }
-    });
-    document.getElementById('count-'+key).textContent = (data[key]||[]).length;
-  });
-
-  let filled = 0, total = 6;
-  if(data.personal.qual) filled++;
-  if(data.cv.vision || data.cv.file) filled++;
-  if(data.performance.length) filled++;
-  if(data.studentWork.length) filled++;
-  if(data.certificates.length) filled++;
-  if(data.development.length) filled++;
-  document.getElementById('progressFill').style.width = Math.round(filled/total*100)+'%';
-
-  const hasPersonalData = data.personal.qual || data.personal.spec || data.personal.exp || data.personal.photo;
-  if(!document.getElementById('btn-save-personal').dataset.userToggled){
-    setPersonalEditable(!hasPersonalData);
-  }
-}
-
-function escapeHtml(s){
-  return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-
-function savePersonal(){
-  const photoFile = getSelectedFile('photo');
-  const finish = ()=>{
-    data.personal.qual = document.getElementById('f-qual').value;
-    data.personal.spec = document.getElementById('f-spec').value;
-    data.personal.exp = document.getElementById('f-exp').value;
-    if(!save()){ render(); return; }
-    render(); flashMsg('msg-personal');
-    clearPreview('photo');
-    delete document.getElementById('btn-save-personal').dataset.userToggled;
-    setPersonalEditable(false);
-  };
-  if(photoFile){
-    processFile(photoFile, 800).then(dataUrl=>{ data.personal.photo = dataUrl; finish(); })
-      .catch(()=> alert('تعذّر معالجة الصورة، جرّب مرة أخرى'));
-  } else {
-    finish();
-  }
-}
-
-function setPersonalEditable(state){
-  ['f-qual','f-spec','f-exp'].forEach(id=> document.getElementById(id).disabled = !state);
-  document.getElementById('btn-save-personal').style.display = state ? 'inline-block' : 'none';
-  document.getElementById('btn-edit-personal').textContent = state ? 'إلغاء' : 'تعديل';
-}
-
-function togglePersonalEdit(){
-  const nowEditable = document.getElementById('f-qual').disabled;
-  document.getElementById('btn-save-personal').dataset.userToggled = '1';
-  setPersonalEditable(nowEditable);
-  if(!nowEditable){
-    document.getElementById('f-qual').value = data.personal.qual||'';
-    document.getElementById('f-spec').value = data.personal.spec||'';
-    document.getElementById('f-exp').value = data.personal.exp||'';
-    clearPreview('photo');
-  }
-}
-
-function saveCv(){
-  data.cv.vision = document.getElementById('f-vision').value;
-  const fileInput = document.getElementById('input-file-cv');
-  const file = fileInput.files[0];
-  const commit = ()=>{
-    if(!save()){ render(); return; }
-    render(); flashMsg('msg-cv');
-    fileInput.value='';
-  };
-  if(file){
-    processFile(file, 1600).then(dataUrl=>{
-      const prevFile = data.cv.file, prevName = data.cv.fileName;
-      data.cv.file = dataUrl; data.cv.fileName = file.name;
-      if(!save()){ data.cv.file = prevFile; data.cv.fileName = prevName; render(); return; }
-      render(); flashMsg('msg-cv'); fileInput.value='';
-    }).catch(()=> alert('تعذّر معالجة الملف، جرّب مرة أخرى'));
-  } else {
-    commit();
-  }
-}
-
-function deleteCvFile(){
-  data.cv.file = null; data.cv.fileName = '';
-  save(); render();
-}
-
-function clearPreview(key){
-  const fileInput = document.getElementById('input-file-'+key);
-  const camInput = document.getElementById('input-camera-'+key);
-  const thumb = document.getElementById('thumb-'+key);
-  if(fileInput) fileInput.value='';
-  if(camInput) camInput.value='';
-  if(thumb){ thumb.style.display='none'; thumb.src=''; thumb.removeAttribute('src'); }
-  const pdfLabel = document.getElementById('pdfname-'+key);
-  if(pdfLabel) pdfLabel.textContent='';
-}
-
-function previewImg(key, el){
-  const thumb = document.getElementById('thumb-'+key);
-  const file = (el && el.files[0]) || (document.getElementById('input-camera-'+key) && document.getElementById('input-camera-'+key).files[0]) || (document.getElementById('input-file-'+key) && document.getElementById('input-file-'+key).files[0]);
-  if(!file) return;
-  const camInput = document.getElementById('input-camera-'+key);
-  const galInput = document.getElementById('input-file-'+key);
-  if(el===camInput && galInput) galInput.value='';
-  if(el===galInput && camInput) camInput.value='';
-  if(file.type==='application/pdf'){
-    thumb.removeAttribute('src');
-    thumb.style.display='none';
-    let label = document.getElementById('pdfname-'+key);
-    if(!label){
-      label = document.createElement('span');
-      label.id = 'pdfname-'+key;
-      label.style.cssText = 'font-size:12.5px; color:var(--accent); display:inline-block;';
-      thumb.insertAdjacentElement('afterend', label);
-    }
-    label.textContent = 'ملف PDF: ' + file.name;
-    return;
-  }
-  const oldLabel = document.getElementById('pdfname-'+key);
-  if(oldLabel) oldLabel.textContent='';
-  const reader = new FileReader();
-  reader.onload = e=>{ thumb.src = e.target.result; thumb.style.display='block'; };
-  reader.readAsDataURL(file);
-}
-
-function getSelectedFile(key){
-  const camInput = document.getElementById('input-camera-'+key);
-  const galInput = document.getElementById('input-file-'+key);
-  if(camInput && camInput.files[0]) return camInput.files[0];
-  if(galInput && galInput.files[0]) return galInput.files[0];
-  return null;
-}
-
-function toggleOtherStandard(){
-  const sel = document.getElementById('input-title-performance');
-  const other = document.getElementById('input-title-performance-other');
-  other.style.display = sel.value==='__other__' ? 'block' : 'none';
-}
-
-function fileToDataURL(file){
-  return new Promise((resolve, reject)=>{
-    const reader = new FileReader();
-    reader.onload = e=> resolve(e.target.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-function dataUrlToArrayBuffer(dataUrl){
-  const base64 = dataUrl.split(',')[1];
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for(let i=0;i<binary.length;i++){ bytes[i] = binary.charCodeAt(i); }
-  return bytes.buffer;
-}
-
-function pdfDataUrlToImage(pdfDataUrl, maxDim){
-  if(!window.pdfjsLib) return Promise.reject('pdfjs not loaded');
-  const buf = dataUrlToArrayBuffer(pdfDataUrl);
-  return pdfjsLib.getDocument({data:buf}).promise
-    .then(pdf=> pdf.getPage(1))
-    .then(page=>{
-      const base = page.getViewport({scale:1});
-      const scale = Math.min(maxDim/base.width, maxDim/base.height, 3);
-      const viewport = page.getViewport({scale});
-      const canvas = document.createElement('canvas');
-      canvas.width = viewport.width; canvas.height = viewport.height;
-      return page.render({canvasContext:canvas.getContext('2d'), viewport}).promise
-        .then(()=> canvas.toDataURL('image/jpeg', 0.85));
-    });
-}
-
-async function exportPdf(){
-  const btn = document.getElementById('btn-export');
-  if(btn){ btn.disabled = true; btn.textContent = 'يجهّز الملفات...'; }
-  document.querySelectorAll('.pdf-export-temp').forEach(el=>{
-    if(el.id==='cv-saved-image'){ el.classList.remove('pdf-export-temp'); }
-    else { el.remove(); }
-  });
-
-  const badges = Array.from(document.querySelectorAll('.pdf-badge'));
-  for(const badge of badges){
-    const key = badge.dataset.key, id = badge.dataset.id;
-    const item = (data[key]||[]).find(i=>i.id===id);
-    if(!item || !item.img) continue;
-    try{
-      if(!window.pdfjsLib) throw new Error('مكتبة قراءة PDF لم تُحمّل بعد — تأكد من وجود اتصال إنترنت');
-      const imgUrl = await pdfDataUrlToImage(item.img, 1400);
-      const img = document.createElement('img');
-      img.src = imgUrl;
-      img.className = 'pdf-export-temp';
-      badge.insertAdjacentElement('afterend', img);
-      badge.style.display = 'none';
-    }catch(e){
-      console.error('Evidence PDF export conversion failed:', key, id, e);
-    }
-  }
-
-  const cvIsPdf = data.cv.file && (data.cv.file.startsWith('data:application/pdf') || (data.cv.fileName && /\.pdf$/i.test(data.cv.fileName)));
-  if(cvIsPdf){
-    try{
-      if(!window.pdfjsLib) throw new Error('مكتبة قراءة PDF لم تُحمّل بعد — تأكد من وجود اتصال إنترنت');
-      const imgUrl = await pdfDataUrlToImage(data.cv.file, 1400);
-      const cvSavedImg = document.getElementById('cv-saved-image');
-      cvSavedImg.src = imgUrl;
-      cvSavedImg.classList.add('pdf-export-temp');
-    }catch(e){
-      console.error('CV PDF export conversion failed:', e);
-    }
-  }
-
-  if(btn){ btn.disabled = false; btn.textContent = 'تصدير الملف PDF'; }
-  window.print();
-}
-
-window.addEventListener('afterprint', ()=>{
-  document.querySelectorAll('.pdf-export-temp').forEach(el=> el.remove());
-  const cvSavedImg = document.getElementById('cv-saved-image');
-  if(cvSavedImg) cvSavedImg.classList.remove('pdf-export-temp');
-  render();
-});
-
-function processFile(file, maxDim){
-  if(file.type==='application/pdf') return fileToDataURL(file);
-  if(!file.type.startsWith('image/')) return fileToDataURL(file);
-  return fileToDataURL(file).then(dataUrl=> new Promise((resolve)=>{
-    const img = new Image();
-    img.onload = ()=>{
-      let w = img.width, h = img.height;
-      if(w>maxDim || h>maxDim){
-        if(w>h){ h = Math.round(h*maxDim/w); w = maxDim; } else { w = Math.round(w*maxDim/h); h = maxDim; }
-      }
-      const canvas = document.createElement('canvas');
-      canvas.width = w; canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      resolve(canvas.toDataURL('image/jpeg', 0.82));
-    };
-    img.onerror = ()=> resolve(dataUrl);
-    img.src = dataUrl;
-  }));
-}
-
-function addItem(key){
-  const noteInput = document.getElementById('input-note-'+key);
-  const titleSelect = document.getElementById('input-title-'+key);
-  const titleOther = document.getElementById('input-title-'+key+'-other');
-  const note = noteInput.value.trim();
-  let title = '';
-  if(titleSelect){
-    title = titleSelect.tagName==='SELECT' && titleSelect.value==='__other__'
-      ? (titleOther ? titleOther.value.trim() : '')
-      : titleSelect.value;
-  }
-  const file = getSelectedFile(key);
-
-  if(!note && !file){
-    alert('أضف صورة أو اكتب ملاحظة على الأقل');
-    return;
-  }
-
-  const pushItem = (imgData)=>{
-    const item = { id: Date.now().toString(36)+Math.random().toString(36).slice(2,6),
-                    title, note, img: imgData||null, date: todayStr() };
-    data[key].push(item);
-    if(!save()){ data[key].pop(); return; }
-    render();
-    clearPreview(key);
-    noteInput.value=''; if(titleSelect){ titleSelect.value=''; } if(titleOther){ titleOther.value=''; titleOther.style.display='none'; }
-  };
-
-  if(file){
-    processFile(file, 1600).then(pushItem).catch(()=> alert('تعذّر معالجة الملف، جرّب مرة أخرى'));
-  } else {
-    pushItem(null);
-  }
-}
-
-function deleteItem(key, id){
-  try{
-    data[key] = data[key].filter(i=>i.id!==id);
-    save(); render();
-  }catch(err){
-    alert('صار خطأ أثناء الحذف: ' + err.message);
-  }
-}
-
-function editName(){
-  const name = prompt('اسم المعلم/ـة:', data.teacherName||'');
-  if(name && name.trim()){
-    data.teacherName = name.trim();
-    save(); render();
-  }
-}
-
-function finishSetup(){
-  const name = document.getElementById('setupName').value.trim();
-  if(!name){ alert('الرجاء إدخال الاسم'); return; }
-  data.teacherName = name;
-  save();
-  document.getElementById('setupModal').classList.add('hidden');
-  render();
-}
-
-// init
-if(data.teacherName){
-  document.getElementById('setupModal').classList.add('hidden');
-}
-render();
-</script>
-</body>
-</html>
+Visual Studio Code 1.137
+
+Show release notes after an update
+
+Follow us on LinkedIn, X, Bluesky, Instagram | View online
+
+Release date: September 9, 2026
+
+Welcome to the 1.137 release of Visual Studio Code. This release helps you automate recurring work, continue quick chats in a workspace, talk with agents by voice, and work with GitHub issues and pull requests without leaving the Agents window.
+
+The Story of VS Code: Watch the VS Code documentary and discover how the editor and its community evolved.
+
+Automations (Preview): Schedule recurring agent tasks to run hourly, daily, or weekly, or run them on demand.
+
+Voice Mode (Experimental): Talk with an agent and interrupt or redirect it while it works on your code.
+
+Continue quick chats in a workspace: Attach a project to an existing quick chat without losing the conversation history or current request.
+
+GitHub issues and pull requests (Experimental): Review issue and pull request details directly in the Agents window, even when the repository is not open.
+
+Contest: Name the VS Code pet: Meet the VS Code pet and enter the contest to choose its name.
+
+Don't forget to join the GitHub Copilot Day live on September 10, 2026. Learn the most effective ways to use Copilot, from agents and model choice to working across GitHub, Copilot app, Copilot CLI, and Visual Studio Code.
+
+Happy Coding!
+
+VS Code is rolling out gradually to all users. Use Check for Updates in VS Code to get the latest version immediately.
+
+To try new features as soon as possible, download the nightly Insiders build, which includes the latest updates as soon as they are available.
+
+In this update
+The Story of VS Code
+Agents
+Chat
+Code Editing
+Languages
+Contributions to extensions
+Deprecated features and settings
+Thank you
+The Story of VS Code
+Discover the story behind VS Code, from its early beginnings to the platform millions of developers use today, and the community that helped shape it along the way.
+
+Graphic poster featuring the VS Code logo glowing over a dark background filled with programming code, with the title "The Story of VS Code."
+
+Agents
+Automations (Preview)
+Setting: chat.automations.enabled
+
+Automations run recurring agent tasks on a schedule, so routine work does not have to be started manually. Start with a template for catching up on changes, triaging issues, or finding bugs, or define your own prompt and schedule.
+
+To try automations, enable chat.automations.enabled, open the Agents window, and select Automations in the sidebar. You can run an automation on demand or schedule it to run hourly, daily, or weekly. Learn more about automations in the documentation.
+
+
+Automations is in Preview and is rolling out gradually to all users.
+
+Open GitHub issues and PR details (Experimental)
+Setting: extensions.experimental.enableAgentsWindowCapability
+
+When a chat conversation references work on GitHub, the Agents window can provide direct integration with the GitHub Pull Requests extension. Select a github.com issue or pull request link to open its details directly in the Agents window, without switching to a browser. This also works when you don't have a workspace for that repository open.
+
+To try this initial integration, install the GitHub Pull Requests extension in your default VS Code profile and enable extensions.experimental.enableAgentsWindowCapability.
+
+Attach GitHub issues and pull requests in any chat
+Add a GitHub issue or pull request as context from the Add Context... menu in any chat input, including the Chat view, Chat editor, and Agents window. This makes the issue description, comments, or pull request changes available to the agent without copying them into your prompt.
+
+Screenshot showing a search for GitHub issues from the Add Context menu.
+
+You can also paste a GitHub issue or pull request URL into the new-session input. The URL remains in your prompt and a context attachment is added automatically.
+
+Screenshot showing pasted GitHub issue and pull request URLs with context attachments in chat.
+
+Help name the VS Code pet (Experimental)
+The experimental VS Code pet is an interactive companion that reacts as you work with agents. Enter /vscode-pet in chat to meet it, then help choose its name.
+
+Screenshot showing the VS Code pet introduction in chat.
+
+From September 10 through September 17, 2026, submit a name for the VS Code pet. Review the contest terms and conditions.
+
+Continue quick chats in a workspace
+You can start a quick chat in the Agents window without associating it with a workspace, for example, to discuss general questions or ideas. If the conversation later becomes project-specific, ask the Copilot agent to attach a local folder and continue the same chat.
+
+After you confirm the workspace and choose whether to use the folder directly or create an isolated worktree, the chat becomes a workspace session. The session retains its title, conversation history, and current request, and the agent automatically continues with access to the project files when workspace setup finishes.
+
+
+Alternatively, you can start the project work in a new workspace session.
+
+
+Note: Continuing a chat conversation in a workspace session is currently available only in the Copilot harness.
+
+Agent-queued messages
+Keep agents working in parallel without interrupting a chat that is already processing a request. When an agent uses the send_message session-management tool to contact a busy chat, VS Code queues the message and starts it after the active turn completes successfully.
+
+An agent can queue multiple messages for chats in the same session or another session. VS Code processes queued messages in the order they were sent, making multi-chat workflows more predictable.
+
+Agent host
+The agent host lets you connect to the same agent session from multiple VS Code windows. It runs agent harnesses in a dedicated process based on the Agent Host Protocol (AHP). The agent host's Copilot agent is powered by the Copilot SDK, which aligns the agent's behavior and functionality with the Copilot CLI, the standalone GitHub Copilot app, and other Copilot products.
+
+We're actively developing the agent host. Learn more in the agent host documentation and our agent host blog post, where we share why we built the agent host, what it enables in VS Code, how the architecture and open protocol work, and workflows you can try yourself.
+
+If you have any feedback or requests, please let us know by filing an issue.
+
+Chat
+Voice Mode (Experimental)
+Settings:   agents.voice.enabled ,   agents.voice.showTranscript ,   agents.voice.voice
+
+Voice Mode enables you to have a natural, spoken conversation with an agent while it works on your code.
+
+To try it, enable   agents.voice.enabled and select the Voice Mode button in the chat input.
+
+While the agent is speaking, start speaking or use the push-to-talk shortcut to interrupt the response and continue the conversation.
+
+Voice Mode is aware of your active session and can answer questions about running sessions, the selected model, and attached files. You can also ask Voice Mode to start a new session. When a request is routed, Voice Mode announces whether it is sending the request to an existing session or starting a new one.
+
+
+You can customize Voice Mode in the following ways:
+
+Enable   agents.voice.showTranscript to show the conversation transcript in the chat input while Voice Mode is active. Use the Voice Mode controls to show or hide the transcript and mute or unmute your microphone without ending the voice session.
+Run Chat: Dictate: Select Microphone from the Command Palette to choose the input device used by both dictation and Voice Mode.
+Use   agents.voice.voice to select the voice that reads responses aloud.
+Run Voice Mode: Show Introduction from the Command Palette to reopen the introduction, where you can select a microphone and preview the available voices.
+You can also right-click the Voice Mode button in the chat input to quickly access its configuration, instructions, introduction, microphone selection, and transcript controls. Learn more about using Voice Mode.
+
+Administrators can disable Voice Mode by turning off Copilot preview features for their organization.
+
+Code Editing
+Smart diff editor layout
+Choose a diff layout in the same way across regular diffs, multi-file diffs, and the Agents window Changes editor. Open More Actions (...) > Diff View, and then select Inline, Side by Side, or Automatic.
+
+The Automatic option shows which layout is active and adapts as the editor width changes. If you deliberately widen an inline diff by dragging a sash, the diff remains inline while you resize so the content doesn't shift unexpectedly.
+
+
+Binary files in multi-file diffs
+Changed binary files, such as images, remain visible in multi-file diffs instead of being omitted. The diff shows a Binary file changed placeholder in the file's original position. Select Open Diff to review the file in the standard diff experience, such as an image diff or applicable custom editor.
+
+Screenshot showing a binary file placeholder and Open Diff action in a multi-file diff.
+
+Multi-file diffs in editor windows also use the same visual design as multi-file diffs in the Agents window.
+
+Languages
+GitHub links in the Markdown editor (Experimental)
+Settings:   markdown.experimental.richLinks.enabled ,   chat.experimental.richLinks.enabled
+
+GitHub issue and pull request links in the Markdown editor show the current title and state, so you can understand each reference without opening it first. The link updates when its issue or pull request state changes, including CI updates.
+
+Screenshot showing GitHub pull requests rendered as rich links with live status indicators in the Markdown editor.
+
+To use the same link rendering in chat, set   chat.experimental.richLinks.enabled to true.
+
+Contributions to extensions
+GitHub Pull Requests
+There has been more progress on the GitHub Pull Requests extension, which enables you to work on, create, and manage pull requests and issues. New features include:
+
+Faster opening of the pull request webview
+All github.com links in VS Code will be opened with the extension (can be disabled with githubPullRequests.openPullLinks)
+Review the changelog for the 0.166.0 release of the extension to learn about everything in the release.
+
+Deprecated features and settings
+None
+
+Thank you
+Contributions to vscode:
+
+@accnops (Arthur Cnops): Use dedicated MAI transcription for dictation PR #334042
+@arpankanwer (Birarpanjot Singh Kanwer): fix(copilot): don't auto-retry expired vision attachments, show actionable error PR #334129
+@bstee615 (Benjamin Steenhoek)
+Recognize eagerness option in PatchBased02Unified PR #333606
+Add PatchBased02UnifiedEagerness prompt strategy PR #333302
+@hadley (Hadley Wickham): Fix webview view badge not clearing when set to undefined PR #331019
+@jmymay (Jeremy Majewski): Add isChromeOS to platforms.ts and context. PR #309097
+@joshspicer
+agentHost: managed permission fixes for shell paths and read prompts PR #333249
+Managed settings: reuse cached policy more often PR #333697
+Improve mock policy server troubleshooting PR #333930
+Ensure managed settings stability with regression tests PR #334056
+Polish mock policy server UI PR #334122
+remove old tool-rename-deprecation skill PR #334279
+remove example from mock-policy-server PR #334361
+@kondv: mcp: Avoid stopping servers for equivalent URI definitions PR #333443
+@leep-frog: add args to editor.action.formatDocument.multiple PR #245743
+@mcumming (Michael Cummings (MSFT))
+Enable Microsoft Entra ID sign-in for Private Marketplace access PR #325331
+Make extensions.gallery.authProvider policy-controlled PR #333837
+@mst-mkt (keito): Fix surrounding a selection with brackets after arrow functions (#225916) PR #321210
+@piyushmadan (Piyush Madan): Show remaining turns to execution subagents PR #332704
+@RajeshKumar11: Fix extensions.allowed schema flagging valid version arrays as invalid PR #329744
+@rohit489 (Rohit Agrawal - MSFT): Record CAPI X-Copilot-Service-Request-Id on chat telemetry events PR #334638
+@RyanEwen (Ryan Ewen): Report a browser tool failure with an empty message as a failure PR #334311
+@SimonSiefke (Simon Siefke)
+fix: memory leak in git branch protection provider PR #333381
+fix: memory leak in extension host pseudoterminals PR #333397
+fix: memory leak in accessible view toolbar PR #333183
+fix: memory leak in test results PR #333244
+fix: memory leak in extension host comments PR #334095
+fix: memory leak in mainThreadNotebook PR #334189
+fix: memory leak in terminal profile service PR #334100
+@vscodebot-pr (VS Code PR Bot)
+fix: clamp inverted visible range in ListView to prevent RangeError (fixes #333230) PR #333236
+fix: cancel pending single-pane docked-tab reconciles on dispose (fixes #333537) PR #333541
+fix: guard null diagnostic code in copilotcli diagnostics push (fixes #333772) PR #333781
+fix: skip real AudioContext in Voice Mode onboarding preview under tests (build fix for vscode-engineering#3742) PR #333858
+@wibaek (Wibaek Park): fix: avoid refocusing find input during IME composition PR #320898
+@YOSHII-Hiroto (吉井　啓人（YOSHII, Hiroto）): Support opening MHTML files in integrated browser PR #333307
+Contributions to vscode-pull-request-github:
+
+@jameswilmiller (James Miller): Always show commit SHA in tree PR #8840
+@tamird (Tamir Duberstein)
+Require variables for legacy GraphQL queries PR #8889
+Retry review comments with smaller pages PR #8890
+Issue tracking
+Contributions to our issue tracking:
+
+@gjsjohnmurray (John Murray)
+@RedCMD (RedCMD)
+@IllusionMH (Andrii Dieiev)
+@albertosantini (Alberto Santini)
+We really appreciate people trying our new features as soon as they are ready, so check back here often and learn what's new.
+
+If you'd like to read release notes for previous VS Code versions, go to Updates on code.visualstudio.com.
+
