@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ملف إنجاز المعلم</title>
+<style>
+  :root{
+    --bg:#f5f4f0; --card:#ffffff; --border:#e2e0d8; --text:#2c2c2a; --muted:#6b6a63;
+    --accent:#0f6e56; --accent-light:#e1f5ee; --danger:#993c1d; --danger-light:#faece7;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--text); font-family:"Segoe UI", Tahoma, Arial, sans-serif; line-height:1.7;}
+  .wrap{max-width:720px; margin:0 auto; padding:16px;}
+  header.top{background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px 18px; margin-bottom:16px; display:flex; align-items:center; gap:14px;}
+  .avatar{width:52px; height:52px; border-radius:50%; background:var(--accent-light); color:var(--accent); display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:600; flex-shrink:0;}
+  header.top .info{flex:1; min-width:0;}
+  header.top h1{font-size:17px; margin:0 0 2px;}
+  header.top p{font-size:13px; color:var(--muted); margin:0;}
+  .edit-name{border:1px solid var(--border); background:var(--card); border-radius:8px; padding:6px 10px; font-size:12px; cursor:pointer; color:var(--muted);}
+  .progress-bar{height:6px; background:var(--bg); border-radius:4px; overflow:hidden; margin-top:10px;}
+  .progress-fill{height:100%; background:var(--accent); transition:width .3s;}
+
+  .branch-title{font-size:13px; color:var(--muted); margin:22px 4px 8px;}
+  .section{background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px 18px; margin-bottom:12px;}
+  .section h2{font-size:15.5px; margin:0 0 4px; display:flex; align-items:center; justify-content:space-between;}
+  .section .count{font-size:12px; color:var(--accent); background:var(--accent-light); padding:2px 10px; border-radius:20px;}
+  .section .sub{font-size:12.5px; color:var(--muted); margin:0 0 12px;}
+
+  textarea, input[type=text]{width:100%; border:1px solid var(--border); border-radius:8px; padding:9px 10px; font-size:14px; font-family:inherit; background:var(--bg); color:var(--text);}
+  textarea{resize:vertical; min-height:54px;}
+  label.small{font-size:12px; color:var(--muted); display:block; margin:8px 0 4px;}
+  .field-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+
+  .item{border:1px solid var(--border); border-radius:10px; padding:10px; margin-top:10px; display:flex; gap:10px;}
+  .item img{width:64px; height:64px; object-fit:cover; border-radius:8px; flex-shrink:0; background:var(--bg);}
+  .item .body{flex:1; min-width:0;}
+  .item .note{font-size:13.5px; margin:0 0 4px; word-break:break-word;}
+  .item .date{font-size:11.5px; color:var(--muted);}
+  .item .del{border:none; background:none; color:var(--danger); font-size:12px; cursor:pointer; padding:2px 6px; flex-shrink:0; align-self:flex-start;}
+
+  .add-box{border:1px dashed var(--border); border-radius:10px; padding:12px; margin-top:12px; background:var(--bg);}
+  .add-box input[type=file]{font-size:12.5px; width:100%; margin-bottom:8px;}
+  .add-box .thumb{max-width:100px; max-height:100px; border-radius:8px; margin-bottom:8px; display:none;}
+  .btn{border:none; border-radius:8px; padding:9px 16px; font-size:13.5px; cursor:pointer; font-weight:600;}
+  .btn-primary{background:var(--accent); color:#fff;}
+  .btn-outline{background:#fff; border:1px solid var(--border); color:var(--text);}
+  .save-msg{font-size:12px; color:var(--accent); margin-top:8px; display:none;}
+  .pdf-export-temp{display:none;}
+
+  .modal-bg{position:fixed; inset:0; background:rgba(0,0,0,.4); display:flex; align-items:center; justify-content:center; padding:20px; z-index:50;}
+  .modal{background:#fff; border-radius:14px; padding:22px; max-width:360px; width:100%;}
+  .modal h3{margin:0 0 6px; font-size:16px;}
+  .modal p{font-size:13px; color:var(--muted); margin:0 0 14px;}
+  .hidden{display:none !important;}
+  footer.note{font-size:11.5px; color:var(--muted); text-align:center; margin:24px 0 8px;}
+  .export-bar{position:sticky; bottom:0; background:var(--card); border:1px solid var(--border); border-radius:14px; padding:12px; margin:16px 0; text-align:center;}
+  .export-bar .btn{width:100%; padding:12px;}
+  @media print{
+    body{background:#fff;}
+    .edit-name, .add-box, .export-bar, .del, #setupModal, input[type=file], .upload-controls, #thumb-photo, #cv-attached, .form-action-btn{display:none !important;}
+    .item{flex-direction:column; align-items:flex-start;}
+    .item img{width:100%; max-width:100%; height:auto; object-fit:contain; border:1px solid var(--border); margin-top:6px;}
+    .thumb{width:100% !important; max-width:100% !important; height:auto !important; max-height:none !important; object-fit:contain; border:1px solid var(--border); margin-top:6px;}
+    .pdf-export-temp{display:block !important; width:100% !important; max-width:100% !important; height:auto !important; object-fit:contain; border:1px solid var(--border); margin-top:6px;}
+    .section{border:1px solid #ccc;}
+  }
+</style>
+</head>
+<body>
+
+<div id="setupModal" class="modal-bg">
+  <div class="modal">
+    <h3>مرحباً بك</h3>
+    <p>هذا ملفك الخاص كمعلم. عبّي اسمك عشان نبدأ — بياناتك تُحفظ تلقائياً على جهازك ولن تختفي عند الرجوع لاحقاً.</p>
+    <input type="text" id="setupName" placeholder="اسم المعلم/ـة" style="margin-bottom:10px;">
+    <button class="btn btn-primary" style="width:100%" onclick="finishSetup()">بدء ملفي</button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <header class="top">
+    <div class="avatar" id="avatarLetter">م</div>
+    <div class="info">
+      <h1 id="teacherName">—</h1>
+      <p>مدرسة كعب بن مالك بالأودية</p>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    </div>
+    <button class="edit-name" onclick="editName()">تعديل الاسم</button>
+  </header>
+
+  <div class="branch-title">الهوية والسيرة</div>
+
+  <div class="section" id="sec-personal">
+    <h2>البيانات الشخصية <button class="edit-name" id="btn-edit-personal" onclick="togglePersonalEdit()">تعديل</button></h2>
+    <p class="sub">الاسم والمؤهل والتخصص</p>
+
+    <div class="upload-controls">
+      <label class="small">الصورة الشخصية</label>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <img class="thumb" id="thumb-photo" style="width:56px; height:56px; border-radius:50%; object-fit:cover; margin-bottom:0;">
+      </div>
+      <input type="file" accept="image/*" capture="user" id="input-camera-photo" onchange="previewImg('photo', this)">
+      <label class="small" style="margin-top:4px;">أو اختر من المعرض</label>
+      <input type="file" accept="image/*" id="input-file-photo" onchange="previewImg('photo', this)">
+      <button class="btn btn-outline" type="button" onclick="clearPreview('photo')" style="padding:6px 10px; font-size:12px; margin-top:6px;">إزالة</button>
+    </div>
+
+    <div class="field-grid" style="margin-top:14px;">
+      <div><label class="small">المؤهل العلمي</label><input type="text" id="f-qual"></div>
+      <div><label class="small">التخصص</label><input type="text" id="f-spec"></div>
+      <div><label class="small">سنوات الخبرة</label><input type="text" id="f-exp"></div>
+    </div>
+    <button class="btn btn-primary form-action-btn" style="margin-top:12px" id="btn-save-personal" onclick="savePersonal()">حفظ البيانات</button>
+    <div class="save-msg" id="msg-personal">تم الحفظ</div>
+  </div>
+
+  <div class="section" id="sec-cv">
+    <h2>السيرة الذاتية</h2>
+    <p class="sub">الرؤية والرسالة</p>
+    <label class="small">الرؤية والرسالة المهنية</label>
+    <textarea id="f-vision" placeholder="اكتب رؤيتك ورسالتك كمعلم..."></textarea>
+    <div class="upload-controls">
+      <label class="small">إرفاق ملف السيرة الذاتية (صورة أو PDF) — اختياري</label>
+      <input type="file" accept="image/*,application/pdf" id="input-file-cv" onchange="previewImg('cv')">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <img class="thumb" id="thumb-cv" style="margin-bottom:0;">
+        <button class="btn btn-outline" type="button" onclick="clearPreview('cv')" style="padding:6px 10px; font-size:12px;">إزالة</button>
+      </div>
+    </div>
+    <div id="cv-attached" style="margin-top:8px; display:none; align-items:center; gap:8px;">
+      <span class="save-msg" id="cv-attached-label" style="display:inline; color:var(--muted);">ملف مرفق حالياً</span>
+      <button class="del" onclick="deleteCvFile()">حذف الملف</button>
+    </div>
+    <img class="thumb" id="cv-saved-image" style="margin-top:8px; display:none;">
+    <button class="btn btn-primary form-action-btn" style="margin-top:12px" onclick="saveCv()">حفظ</button>
+    <div class="save-msg" id="msg-cv">تم الحفظ</div>
+  </div>
+
+  <div class="branch-title">الأداء والتدريس</div>
+
+  <div class="section" id="sec-performance">
+    <h2>معايير الأداء <span class="count" id="count-performance">0</span></h2>
+    <p class="sub">شواهد معايير الأداء الوظيفي</p>
+    <div id="list-performance"></div>
+    <div class="add-box">
+      <label class="small">اسم المعيار</label>
+      <select id="input-title-performance" onchange="toggleOtherStandard()" style="width:100%; border:1px solid var(--border); border-radius:8px; padding:9px 10px; font-size:14px; background:var(--bg); color:var(--text);">
+        <option value="">اختر المعيار</option>
+        <option value="أداء الواجبات الوظيفية">أداء الواجبات الوظيفية</option>
+        <option value="التفاعل مع المجتمع المهني">التفاعل مع المجتمع المهني</option>
+        <option value="التفاعل مع أولياء الأمور">التفاعل مع أولياء الأمور</option>
+        <option value="تنويع استراتيجيات التدريس">تنويع استراتيجيات التدريس</option>
+        <option value="تحسين نتائج المتعلمين">تحسين نتائج المتعلمين</option>
+        <option value="إعداد وتنفيذ خطة التعلم">إعداد وتنفيذ خطة التعلم</option>
+        <option value="توظيف تقنيات ووسائل التعلم">توظيف تقنيات ووسائل التعلم</option>
+        <option value="تهيئة البيئة التعليمية والإدارة الصفية">تهيئة البيئة التعليمية والإدارة الصفية</option>
+        <option value="__other__">أخرى (اكتب بنفسك)</option>
+      </select>
+      <input type="text" id="input-title-performance-other" placeholder="اكتب اسم المعيار" style="margin-top:8px; display:none;">
+      <label class="small">صورة الشاهد</label>
+      <input type="file" accept="image/*" capture="environment" id="input-camera-performance" onchange="previewImg('performance', this)">
+      <label class="small" style="margin-top:4px;">أو اختر من المعرض</label>
+      <input type="file" accept="image/*,application/pdf" id="input-file-performance" onchange="previewImg('performance', this)">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <img class="thumb" id="thumb-performance" style="margin-bottom:0;">
+        <button class="btn btn-outline" type="button" onclick="clearPreview('performance')" style="padding:6px 10px; font-size:12px;">إزالة</button>
+      </div>
+      <label class="small">ملاحظة توضيحية</label>
+      <textarea id="input-note-performance" placeholder="اكتب توضيحاً عن هذا الشاهد..."></textarea>
+      <button class="btn btn-primary" style="margin-top:8px" onclick="addItem('performance')">إضافة شاهد</button>
+    </div>
+  </div>
+
+  <div class="section" id="sec-studentWork">
+    <h2>أعمال الطلاب <span class="count" id="count-studentWork">0</span></h2>
+    <p class="sub">واجبات ومشاريع وأنشطة</p>
+    <div id="list-studentWork"></div>
+    <div class="add-box">
+      <label class="small">صورة الواجب أو النشاط أو المشروع</label>
+      <input type="file" accept="image/*" capture="environment" id="input-camera-studentWork" onchange="previewImg('studentWork', this)">
+      <label class="small" style="margin-top:4px;">أو اختر من المعرض</label>
+      <input type="file" accept="image/*,application/pdf" id="input-file-studentWork" onchange="previewImg('studentWork', this)">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <img class="thumb" id="thumb-studentWork" style="margin-bottom:0;">
+        <button class="btn btn-outline" type="button" onclick="clearPreview('studentWork')" style="padding:6px 10px; font-size:12px;">إزالة</button>
+      </div>
+      <label class="small">ملاحظة توضيحية عن الصورة</label>
+      <textarea id="input-note-studentWork" placeholder="مثال: نشاط جماعي لمادة العلوم - الصف الرابع"></textarea>
+      <button class="btn btn-primary" style="margin-top:8px" onclick="addItem('studentWork')">إضافة</button>
+    </div>
+  </div>
+
+  <div class="branch-title">الشواهد والتطوير</div>
+
+  <div class="section" id="sec-certificates">
+    <h2>الشهادات والتكريم <span class="count" id="count-certificates">0</span></h2>
+    <p class="sub">خطابات شكر وتقدير</p>
+    <div id="list-certificates"></div>
+    <div class="add-box">
+      <label class="small">صورة الشهادة أو خطاب الشكر</label>
+      <input type="file" accept="image/*" capture="environment" id="input-camera-certificates" onchange="previewImg('certificates', this)">
+      <label class="small" style="margin-top:4px;">أو اختر من المعرض</label>
+      <input type="file" accept="image/*,application/pdf" id="input-file-certificates" onchange="previewImg('certificates', this)">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <img class="thumb" id="thumb-certificates" style="margin-bottom:0;">
+        <button class="btn btn-outline" type="button" onclick="clearPreview('certificates')" style="padding:6px 10px; font-size:12px;">إزالة</button>
+      </div>
+      <label class="small">ملاحظة توضيحية</label>
+      <textarea id="input-note-certificates" placeholder="مثال: خطاب شكر من إدارة المدرسة"></textarea>
+      <button class="btn btn-primary" style="margin-top:8px" onclick="addItem('certificates')">إضافة</button>
+    </div>
+  </div>
+
+  <div class="section" id="sec-development">
+    <h2>التطوير المهني <span class="count" id="count-development">0</span></h2>
+    <p class="sub">دورات وورش عمل</p>
+    <div id="list-development"></div>
+    <div class="add-box">
+      <label class="small">صورة الشهادة التدريبية</label>
+      <input type="file" accept="image/*" capture="environment" id="input-camera-development" onchange="previewImg('development', this)">
+      <label class="small" style="margin-top:4px;">أو اختر من المعرض</label>
+      <input type="file" accept="image/*,application/pdf" id="input-file-development" onchange="previewImg('development', this)">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <img class="thumb" id="thumb-development" style="margin-bottom:0;">
+        <button class="btn btn-outline" type="button" onclick="clearPreview('development')" style="padding:6px 10px; font-size:12px;">إزالة</button>
+      </div>
+      <label class="small">ملاحظة توضيحية</label>
+      <textarea id="input-note-development" placeholder="مثال: دورة توظيف التقنية في التعليم"></textarea>
+      <button class="btn btn-primary" style="margin-top:8px" onclick="addItem('development')">إضافة</button>
+    </div>
+  </div>
+
+  <div class="export-bar">
+    <button class="btn btn-primary" id="btn-export" onclick="exportPdf()">تصدير الملف PDF</button>
+  </div>
+
+  <footer class="note">يُحفظ كل شيء تلقائياً على هذا الجهاز والمتصفح. لا تمسح بيانات المتصفح حتى لا يضيع ملفك.<br>يمكنك تصدير PDF في أي وقت وبأي عدد مرات — كل تصدير يعكس آخر تحديث دون التأثير على البيانات المحفوظة.</footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+if(window.pdfjsLib){
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+</script>
+<script>
+const STORAGE_KEY = 'malaf_injaz_muallim_v1';
+
+function loadData(){
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if(raw){ try{ return JSON.parse(raw); }catch(e){} }
+  return { teacherName:'', personal:{qual:'',spec:'',exp:'',photo:null}, cv:{vision:'', file:null},
+           performance:[], studentWork:[], certificates:[], development:[] };
+}
+let data = loadData();
+
+function save(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    return true;
+  }catch(e){
+    alert('تعذّر الحفظ. الأغلب إن مساحة تخزين المتصفح امتلأت بسبب حجم الملفات. جرّب ملف أصغر (خصوصاً PDF)، أو احذف بعض الشواهد القديمة قبل المحاولة مرة أخرى.');
+    return false;
+  }
+}
+
+function flashMsg(id){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.style.display='block';
+  setTimeout(()=>el.style.display='none', 1500);
+}
+
+function todayStr(){
+  const d = new Date();
+  return d.toLocaleDateString('ar-SA-u-ca-gregory', {year:'numeric', month:'long', day:'numeric'});
+}
+
+function render(){
+  document.getElementById('teacherName').textContent = data.teacherName || 'معلم';
+  const avatarEl = document.getElementById('avatarLetter');
+  if(data.personal.photo){
+    avatarEl.innerHTML = `<img src="${data.personal.photo}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+  } else {
+    avatarEl.textContent = (data.teacherName||'م').trim().charAt(0);
+  }
+  const photoThumb = document.getElementById('thumb-photo');
+  if(data.personal.photo){ photoThumb.src = data.personal.photo; photoThumb.style.display='block'; }
+  else { photoThumb.style.display='none'; photoThumb.removeAttribute('src'); }
+
+  document.getElementById('f-qual').value = data.personal.qual||'';
+  document.getElementById('f-spec').value = data.personal.spec||'';
+  document.getElementById('f-exp').value = data.personal.exp||'';
+  document.getElementById('f-vision').value = data.cv.vision||'';
+  document.getElementById('cv-attached').style.display = data.cv.file ? 'flex' : 'none';
+  document.getElementById('cv-attached-label').textContent = data.cv.file ? ('ملف مرفق: ' + (data.cv.fileName||'بدون اسم')) : '';
+  const cvSavedImg = document.getElementById('cv-saved-image');
+  const cvIsImg = data.cv.file && data.cv.file.startsWith('data:image');
+  if(cvIsImg){ cvSavedImg.src = data.cv.file; cvSavedImg.style.display='block'; }
+  else { cvSavedImg.style.display='none'; cvSavedImg.removeAttribute('src'); }
+
+  ['performance','studentWork','certificates','development'].forEach(key=>{
+    const listEl = document.getElementById('list-'+key);
+    listEl.innerHTML='';
+    (data[key]||[]).forEach(item=>{
+      try{
+        const div = document.createElement('div');
+        div.className='item';
+        const isPdf = item.img && item.img.startsWith('data:application/pdf');
+        div.innerHTML = `
+          ${item.img && !isPdf ? `<img src="${item.img}">` : ''}
+          ${isPdf ? `<div class="pdf-badge" data-key="${key}" data-id="${item.id}" style="width:64px; height:64px; border-radius:8px; background:var(--accent-light); color:var(--accent); display:flex; align-items:center; justify-content:center; font-size:11px; flex-shrink:0;">PDF</div>` : ''}
+          <div class="body">
+            ${item.title ? `<p class="note" style="font-weight:600">${escapeHtml(item.title)}</p>` : ''}
+            <p class="note">${escapeHtml(item.note||'')}</p>
+            <p class="date">${item.date}</p>
+          </div>
+          <button class="del" onclick="deleteItem('${key}','${item.id}')">حذف</button>`;
+        listEl.appendChild(div);
+      }catch(err){ console.error('render item error', key, item, err); }
+    });
+    document.getElementById('count-'+key).textContent = (data[key]||[]).length;
+  });
+
+  let filled = 0, total = 6;
+  if(data.personal.qual) filled++;
+  if(data.cv.vision || data.cv.file) filled++;
+  if(data.performance.length) filled++;
+  if(data.studentWork.length) filled++;
+  if(data.certificates.length) filled++;
+  if(data.development.length) filled++;
+  document.getElementById('progressFill').style.width = Math.round(filled/total*100)+'%';
+
+  const hasPersonalData = data.personal.qual || data.personal.spec || data.personal.exp || data.personal.photo;
+  if(!document.getElementById('btn-save-personal').dataset.userToggled){
+    setPersonalEditable(!hasPersonalData);
+  }
+}
+
+function escapeHtml(s){
+  return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function savePersonal(){
+  const photoFile = getSelectedFile('photo');
+  const finish = ()=>{
+    data.personal.qual = document.getElementById('f-qual').value;
+    data.personal.spec = document.getElementById('f-spec').value;
+    data.personal.exp = document.getElementById('f-exp').value;
+    if(!save()){ render(); return; }
+    render(); flashMsg('msg-personal');
+    clearPreview('photo');
+    delete document.getElementById('btn-save-personal').dataset.userToggled;
+    setPersonalEditable(false);
+  };
+  if(photoFile){
+    processFile(photoFile, 800).then(dataUrl=>{ data.personal.photo = dataUrl; finish(); })
+      .catch(()=> alert('تعذّر معالجة الصورة، جرّب مرة أخرى'));
+  } else {
+    finish();
+  }
+}
+
+function setPersonalEditable(state){
+  ['f-qual','f-spec','f-exp'].forEach(id=> document.getElementById(id).disabled = !state);
+  document.getElementById('btn-save-personal').style.display = state ? 'inline-block' : 'none';
+  document.getElementById('btn-edit-personal').textContent = state ? 'إلغاء' : 'تعديل';
+}
+
+function togglePersonalEdit(){
+  const nowEditable = document.getElementById('f-qual').disabled;
+  document.getElementById('btn-save-personal').dataset.userToggled = '1';
+  setPersonalEditable(nowEditable);
+  if(!nowEditable){
+    document.getElementById('f-qual').value = data.personal.qual||'';
+    document.getElementById('f-spec').value = data.personal.spec||'';
+    document.getElementById('f-exp').value = data.personal.exp||'';
+    clearPreview('photo');
+  }
+}
+
+function saveCv(){
+  data.cv.vision = document.getElementById('f-vision').value;
+  const fileInput = document.getElementById('input-file-cv');
+  const file = fileInput.files[0];
+  const commit = ()=>{
+    if(!save()){ render(); return; }
+    render(); flashMsg('msg-cv');
+    fileInput.value='';
+  };
+  if(file){
+    processFile(file, 1600).then(dataUrl=>{
+      const prevFile = data.cv.file, prevName = data.cv.fileName;
+      data.cv.file = dataUrl; data.cv.fileName = file.name;
+      if(!save()){ data.cv.file = prevFile; data.cv.fileName = prevName; render(); return; }
+      render(); flashMsg('msg-cv'); fileInput.value='';
+    }).catch(()=> alert('تعذّر معالجة الملف، جرّب مرة أخرى'));
+  } else {
+    commit();
+  }
+}
+
+function deleteCvFile(){
+  data.cv.file = null; data.cv.fileName = '';
+  save(); render();
+}
+
+function clearPreview(key){
+  const fileInput = document.getElementById('input-file-'+key);
+  const camInput = document.getElementById('input-camera-'+key);
+  const thumb = document.getElementById('thumb-'+key);
+  if(fileInput) fileInput.value='';
+  if(camInput) camInput.value='';
+  if(thumb){ thumb.style.display='none'; thumb.src=''; thumb.removeAttribute('src'); }
+  const pdfLabel = document.getElementById('pdfname-'+key);
+  if(pdfLabel) pdfLabel.textContent='';
+}
+
+function previewImg(key, el){
+  const thumb = document.getElementById('thumb-'+key);
+  const file = (el && el.files[0]) || (document.getElementById('input-camera-'+key) && document.getElementById('input-camera-'+key).files[0]) || (document.getElementById('input-file-'+key) && document.getElementById('input-file-'+key).files[0]);
+  if(!file) return;
+  const camInput = document.getElementById('input-camera-'+key);
+  const galInput = document.getElementById('input-file-'+key);
+  if(el===camInput && galInput) galInput.value='';
+  if(el===galInput && camInput) camInput.value='';
+  if(file.type==='application/pdf'){
+    thumb.removeAttribute('src');
+    thumb.style.display='none';
+    let label = document.getElementById('pdfname-'+key);
+    if(!label){
+      label = document.createElement('span');
+      label.id = 'pdfname-'+key;
+      label.style.cssText = 'font-size:12.5px; color:var(--accent); display:inline-block;';
+      thumb.insertAdjacentElement('afterend', label);
+    }
+    label.textContent = 'ملف PDF: ' + file.name;
+    return;
+  }
+  const oldLabel = document.getElementById('pdfname-'+key);
+  if(oldLabel) oldLabel.textContent='';
+  const reader = new FileReader();
+  reader.onload = e=>{ thumb.src = e.target.result; thumb.style.display='block'; };
+  reader.readAsDataURL(file);
+}
+
+function getSelectedFile(key){
+  const camInput = document.getElementById('input-camera-'+key);
+  const galInput = document.getElementById('input-file-'+key);
+  if(camInput && camInput.files[0]) return camInput.files[0];
+  if(galInput && galInput.files[0]) return galInput.files[0];
+  return null;
+}
+
+function toggleOtherStandard(){
+  const sel = document.getElementById('input-title-performance');
+  const other = document.getElementById('input-title-performance-other');
+  other.style.display = sel.value==='__other__' ? 'block' : 'none';
+}
+
+function fileToDataURL(file){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = e=> resolve(e.target.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function dataUrlToArrayBuffer(dataUrl){
+  const base64 = dataUrl.split(',')[1];
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for(let i=0;i<binary.length;i++){ bytes[i] = binary.charCodeAt(i); }
+  return bytes.buffer;
+}
+
+function pdfDataUrlToImage(pdfDataUrl, maxDim){
+  if(!window.pdfjsLib) return Promise.reject('pdfjs not loaded');
+  const buf = dataUrlToArrayBuffer(pdfDataUrl);
+  return pdfjsLib.getDocument({data:buf}).promise
+    .then(pdf=> pdf.getPage(1))
+    .then(page=>{
+      const base = page.getViewport({scale:1});
+      const scale = Math.min(maxDim/base.width, maxDim/base.height, 3);
+      const viewport = page.getViewport({scale});
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width; canvas.height = viewport.height;
+      return page.render({canvasContext:canvas.getContext('2d'), viewport}).promise
+        .then(()=> canvas.toDataURL('image/jpeg', 0.85));
+    });
+}
+
+async function exportPdf(){
+  const btn = document.getElementById('btn-export');
+  if(btn){ btn.disabled = true; btn.textContent = 'يجهّز الملفات...'; }
+  document.querySelectorAll('.pdf-export-temp').forEach(el=>{
+    if(el.id==='cv-saved-image'){ el.classList.remove('pdf-export-temp'); }
+    else { el.remove(); }
+  });
+
+  const badges = Array.from(document.querySelectorAll('.pdf-badge'));
+  for(const badge of badges){
+    const key = badge.dataset.key, id = badge.dataset.id;
+    const item = (data[key]||[]).find(i=>i.id===id);
+    if(!item || !item.img) continue;
+    try{
+      if(!window.pdfjsLib) throw new Error('مكتبة قراءة PDF لم تُحمّل بعد — تأكد من وجود اتصال إنترنت');
+      const imgUrl = await pdfDataUrlToImage(item.img, 1400);
+      const img = document.createElement('img');
+      img.src = imgUrl;
+      img.className = 'pdf-export-temp';
+      badge.insertAdjacentElement('afterend', img);
+      badge.style.display = 'none';
+    }catch(e){
+      console.error('Evidence PDF export conversion failed:', key, id, e);
+    }
+  }
+
+  const cvIsPdf = data.cv.file && (data.cv.file.startsWith('data:application/pdf') || (data.cv.fileName && /\.pdf$/i.test(data.cv.fileName)));
+  if(cvIsPdf){
+    try{
+      if(!window.pdfjsLib) throw new Error('مكتبة قراءة PDF لم تُحمّل بعد — تأكد من وجود اتصال إنترنت');
+      const imgUrl = await pdfDataUrlToImage(data.cv.file, 1400);
+      const cvSavedImg = document.getElementById('cv-saved-image');
+      cvSavedImg.src = imgUrl;
+      cvSavedImg.classList.add('pdf-export-temp');
+    }catch(e){
+      console.error('CV PDF export conversion failed:', e);
+    }
+  }
+
+  if(btn){ btn.disabled = false; btn.textContent = 'تصدير الملف PDF'; }
+  window.print();
+}
+
+window.addEventListener('afterprint', ()=>{
+  document.querySelectorAll('.pdf-export-temp').forEach(el=> el.remove());
+  const cvSavedImg = document.getElementById('cv-saved-image');
+  if(cvSavedImg) cvSavedImg.classList.remove('pdf-export-temp');
+  render();
+});
+
+function processFile(file, maxDim){
+  if(file.type==='application/pdf') return fileToDataURL(file);
+  if(!file.type.startsWith('image/')) return fileToDataURL(file);
+  return fileToDataURL(file).then(dataUrl=> new Promise((resolve)=>{
+    const img = new Image();
+    img.onload = ()=>{
+      let w = img.width, h = img.height;
+      if(w>maxDim || h>maxDim){
+        if(w>h){ h = Math.round(h*maxDim/w); w = maxDim; } else { w = Math.round(w*maxDim/h); h = maxDim; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL('image/jpeg', 0.82));
+    };
+    img.onerror = ()=> resolve(dataUrl);
+    img.src = dataUrl;
+  }));
+}
+
+function addItem(key){
+  const noteInput = document.getElementById('input-note-'+key);
+  const titleSelect = document.getElementById('input-title-'+key);
+  const titleOther = document.getElementById('input-title-'+key+'-other');
+  const note = noteInput.value.trim();
+  let title = '';
+  if(titleSelect){
+    title = titleSelect.tagName==='SELECT' && titleSelect.value==='__other__'
+      ? (titleOther ? titleOther.value.trim() : '')
+      : titleSelect.value;
+  }
+  const file = getSelectedFile(key);
+
+  if(!note && !file){
+    alert('أضف صورة أو اكتب ملاحظة على الأقل');
+    return;
+  }
+
+  const pushItem = (imgData)=>{
+    const item = { id: Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+                    title, note, img: imgData||null, date: todayStr() };
+    data[key].push(item);
+    if(!save()){ data[key].pop(); return; }
+    render();
+    clearPreview(key);
+    noteInput.value=''; if(titleSelect){ titleSelect.value=''; } if(titleOther){ titleOther.value=''; titleOther.style.display='none'; }
+  };
+
+  if(file){
+    processFile(file, 1600).then(pushItem).catch(()=> alert('تعذّر معالجة الملف، جرّب مرة أخرى'));
+  } else {
+    pushItem(null);
+  }
+}
+
+function deleteItem(key, id){
+  try{
+    data[key] = data[key].filter(i=>i.id!==id);
+    save(); render();
+  }catch(err){
+    alert('صار خطأ أثناء الحذف: ' + err.message);
+  }
+}
+
+function editName(){
+  const name = prompt('اسم المعلم/ـة:', data.teacherName||'');
+  if(name && name.trim()){
+    data.teacherName = name.trim();
+    save(); render();
+  }
+}
+
+function finishSetup(){
+  const name = document.getElementById('setupName').value.trim();
+  if(!name){ alert('الرجاء إدخال الاسم'); return; }
+  data.teacherName = name;
+  save();
+  document.getElementById('setupModal').classList.add('hidden');
+  render();
+}
+
+// init
+if(data.teacherName){
+  document.getElementById('setupModal').classList.add('hidden');
+}
+render();
+</script>
+</body>
+</html>
