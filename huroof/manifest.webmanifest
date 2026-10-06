@@ -1,0 +1,15 @@
+{
+  "name": "اقرأ لتبدع — تعلّم الحروف",
+  "short_name": "اقرأ لتبدع",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f3f7",
+  "theme_color": "#8a3a4e",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ]
+}
