@@ -65,6 +65,11 @@
     .pdf-export-temp{display:block !important; width:auto !important; max-width:100% !important; height:auto !important; max-height:170mm !important; object-fit:contain; border:1px solid var(--border); margin-top:6px; break-inside:avoid; page-break-inside:avoid; margin-left:auto; margin-right:auto;}
     .section{border:1px solid #ccc; break-inside:auto;}
     .section h2{break-after:avoid; page-break-after:avoid;}
+    .section + .section{break-before:page; page-break-before:always;}
+    .branch-title{break-before:page; page-break-before:always; break-after:avoid; page-break-after:avoid;}
+    header.top + .branch-title{break-before:auto; page-break-before:auto;}
+    #sec-performance:not(:has(.item)), #sec-studentWork:not(:has(.item)), #sec-certificates:not(:has(.item)), #sec-development:not(:has(.item)){break-before:auto !important; page-break-before:auto !important;}
+    .branch-title:has(+ #sec-performance:not(:has(.item))), .branch-title:has(+ #sec-certificates:not(:has(.item))){break-before:auto !important; page-break-before:auto !important;}
     #ministryLogoWrap{break-inside:avoid; page-break-inside:avoid; break-after:avoid; page-break-after:avoid;}
   }
 </style>
