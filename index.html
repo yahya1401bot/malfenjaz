@@ -59,11 +59,11 @@
   @media print{
     body{background:#fff;}
     .edit-name, .add-box, .export-bar, .del, #setupModal, input[type=file], .upload-controls, #thumb-photo, #cv-attached, .form-action-btn, .item-view-btn, #previewModal{display:none !important;}
-    .item{flex-direction:column; align-items:flex-start; break-inside:avoid; page-break-inside:avoid;}
-    .item img{width:auto; max-width:100%; height:auto; max-height:255mm; object-fit:contain; border:1px solid var(--border); margin-top:6px; break-inside:avoid; page-break-inside:avoid; display:block; margin-left:auto; margin-right:auto;}
-    .thumb{width:auto !important; max-width:100% !important; height:auto !important; max-height:255mm !important; object-fit:contain; border:1px solid var(--border); margin-top:6px; break-inside:avoid; page-break-inside:avoid; display:block !important; margin-left:auto; margin-right:auto;}
-    .pdf-export-temp{display:block !important; width:auto !important; max-width:100% !important; height:auto !important; max-height:255mm !important; object-fit:contain; border:1px solid var(--border); margin-top:6px; break-inside:avoid; page-break-inside:avoid; margin-left:auto; margin-right:auto;}
-    .section{border:1px solid #ccc;}
+    .item{flex-direction:column; align-items:flex-start; break-inside:avoid !important; page-break-inside:avoid !important;}
+    .item img{width:auto; max-width:100%; height:auto; max-height:170mm; object-fit:contain; border:1px solid var(--border); margin-top:6px; break-inside:avoid; page-break-inside:avoid; display:block; margin-left:auto; margin-right:auto;}
+    .thumb{width:auto !important; max-width:100% !important; height:auto !important; max-height:170mm !important; object-fit:contain; border:1px solid var(--border); margin-top:6px; break-inside:avoid; page-break-inside:avoid; display:block !important; margin-left:auto; margin-right:auto;}
+    .pdf-export-temp{display:block !important; width:auto !important; max-width:100% !important; height:auto !important; max-height:170mm !important; object-fit:contain; border:1px solid var(--border); margin-top:6px; break-inside:avoid; page-break-inside:avoid; margin-left:auto; margin-right:auto;}
+    .section{border:1px solid #ccc; break-inside:auto;}
     .section h2{break-after:avoid; page-break-after:avoid;}
     #ministryLogoWrap{break-inside:avoid; page-break-inside:avoid; break-after:avoid; page-break-after:avoid;}
   }
