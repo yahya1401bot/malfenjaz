@@ -442,6 +442,8 @@ async function refreshFromServer(){
       if(json){
         SCH = json;
         normalizeSCH();
+        SCH.records = SCH.records.filter(r=> !PENDING_DELETE.has(r.id));
+        UNSAVED.forEach(r=>{ if(!SCH.records.find(x=>x.id===r.id)) SCH.records.push(r); });
         if(currentUser){
           const found = SCH.users.find(u=>u.id===currentUser.id) || SCH.users.find(u=>u.passwordHash===currentUser.passwordHash);
           if(found) currentUser = found;
@@ -462,19 +464,50 @@ function normalizeSCH(){
   if(!Array.isArray(SCH.users)) SCH.users = SCH.users ? Object.values(SCH.users) : [];
 }
 
-async function saveRecordToServer(rec){
+async function saveRecordToServer(rec, quiet){
   try{
     const res = await fetch(`${FIREBASE_URL}/${DATA_PATH}/records/${rec.id}.json`, {
       method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(rec)
     });
     if(!res.ok) throw new Error('save failed: ' + res.status);
-  }catch(e){ console.error('فشل الحفظ', e); showToast('تعذر الحفظ، تحقق من الإنترنت وحاول مرة أخرى'); }
+    return true;
+  }catch(e){ console.error('فشل الحفظ', e); if(!quiet) showToast('تعذر الحفظ، تحقق من الإنترنت وحاول مرة أخرى'); return false; }
 }
-async function deleteRecordFromServer(id){
+async function deleteRecordFromServer(id, quiet){
   try{
-    await fetch(`${FIREBASE_URL}/${DATA_PATH}/records/${id}.json`, { method: 'DELETE' });
-  }catch(e){ console.error('فشل الحذف', e); showToast('تعذر الحذف، تحقق من الإنترنت'); }
+    const res = await fetch(`${FIREBASE_URL}/${DATA_PATH}/records/${id}.json`, { method: 'DELETE' });
+    if(!res.ok) throw new Error('delete failed: ' + res.status);
+    return true;
+  }catch(e){ console.error('فشل الحذف', e); if(!quiet) showToast('تعذر الحذف، تحقق من الإنترنت'); return false; }
 }
+
+/* حفظ سريع: تظهر النتيجة فوراً في الشاشة ويُرسَل السجل للخادم في الخلفية مع إعادة المحاولة تلقائياً */
+const UNSAVED = new Map();   // سجلات لم تُحفظ على الخادم بعد
+const PENDING_DELETE = new Set();
+const sleep = ms => new Promise(r=>setTimeout(r, ms));
+async function persistRecord(rec){
+  UNSAVED.set(rec.id, rec);
+  for(let i=0;i<3;i++){
+    if(await saveRecordToServer(rec, true)){ UNSAVED.delete(rec.id); return true; }
+    await sleep(1500*(i+1));
+  }
+  showToast('تعذر الحفظ على الخادم الآن، ستُعاد المحاولة تلقائياً، لا تغلق الصفحة');
+  return false;
+}
+async function removeRecord(id){
+  PENDING_DELETE.add(id); UNSAVED.delete(id);
+  SCH.records = SCH.records.filter(x=>x.id!==id);
+  for(let i=0;i<3;i++){
+    if(await deleteRecordFromServer(id, true)){ PENDING_DELETE.delete(id); return true; }
+    await sleep(1500*(i+1));
+  }
+  return false;
+}
+setInterval(()=>{
+  UNSAVED.forEach(rec=>{ if(SCH.records.find(x=>x.id===rec.id)) persistRecord(rec); else UNSAVED.delete(rec.id); });
+  PENDING_DELETE.forEach(id=> removeRecord(id));
+}, 15000);
+window.addEventListener('beforeunload', (e)=>{ if(UNSAVED.size || PENDING_DELETE.size){ e.preventDefault(); e.returnValue=''; } });
 async function saveUserToServer(user){
   try{
     const res = await fetch(`${FIREBASE_URL}/${DATA_PATH}/users/${user.id}.json`, {
@@ -701,7 +734,7 @@ function printAllUsersReport(range){
   html += `</tbody></table>`;
   html += `<div class="rep-footer">تم إنشاء هذا التقرير آلياً بواسطة نظام سِجِلّ — ${escapeHtml(SCHOOL_NAME)}</div>`;
   document.getElementById('print-report').innerHTML = html;
-  setTimeout(()=> window.print(), 50);
+  printWhenReady();
 }
 
 function printTeacherActivityReport(u, range, recs){
@@ -733,7 +766,7 @@ function printTeacherActivityReport(u, range, recs){
   if(recs.length===0) html += `<div style="font-size:13px; color:#888; margin-top:10px;">لا توجد سجلات في هذه الفترة.</div>`;
   html += `<div class="rep-footer">تم إنشاء هذا التقرير آلياً بواسطة نظام سِجِلّ — ${escapeHtml(SCHOOL_NAME)}</div>`;
   document.getElementById('print-report').innerHTML = html;
-  setTimeout(()=> window.print(), 50);
+  printWhenReady();
 }
 
 
@@ -1217,7 +1250,7 @@ function renderAttendanceView(cls){
         if(existing){ existing.status = key; rec = existing; }
         else { rec = { id: uid(), studentId: s.id, type:'attendance', date, status:key, subject: mySubject()||'' }; SCH.records.push(rec); }
         render();
-        saveRecordToServer(rec);
+        persistRecord(rec);
       };
       seg.appendChild(btn);
     });
@@ -1367,13 +1400,14 @@ function describeRecord(r){
 }
 function pillHtml(cls,label){ return `<span class="pill pill-${cls}">${label}</span>`; }
 
+function render_after_remove(id){ removeRecord(id); render(); }
 async function deleteAttachment(recordId, field){
   const rec = SCH.records.find(x=>x.id===recordId);
   if(!rec) return;
   delete rec[field];
-  await saveRecordToServer(rec);
   render();
   showToast('تم حذف المرفق');
+  persistRecord(rec);
 }
 
 function openImageLightbox(src){
@@ -1533,7 +1567,9 @@ function renderRecordTab(s, type){
     if(pendingFileData) rec.file = pendingFileData;
     if(type==='note' && !rec.note){ showToast('يرجى كتابة نص الملاحظة'); return; }
     SCH.records.push(rec);
-    await saveRecordToServer(rec); render(); showToast('تم الحفظ');
+    saveBtn.disabled = true;
+    render(); showToast('تم الحفظ');
+    persistRecord(rec);
   };
   card.appendChild(saveBtn);
 
@@ -1557,7 +1593,7 @@ function renderRecordTab(s, type){
       notifyIconBtn.onclick = ()=> openNotifyModal(s, null, buildRecordMessage(s, type, r));
       const delBtn = document.createElement('button');
       delBtn.className='icon-btn'; delBtn.textContent='✕'; delBtn.title='حذف';
-      delBtn.onclick = async ()=>{ SCH.records = SCH.records.filter(x=>x.id!==r.id); await deleteRecordFromServer(r.id); render(); };
+      delBtn.onclick = ()=>{ render_after_remove(r.id); };
       tdAction.appendChild(notifyIconBtn); tdAction.appendChild(delBtn);
       tr.appendChild(tdDate); tr.appendChild(tdDetail); tr.appendChild(tdAction);
       tbody.appendChild(tr);
@@ -2139,6 +2175,11 @@ function openPrintChoiceModal(cls){
   overlay.onclick = (e)=>{ if(e.target===overlay) close(); };
 }
 
+function printWhenReady(){
+  const imgs = Array.from(document.querySelectorAll('#print-report img'));
+  const waits = imgs.map(im=> im.complete ? Promise.resolve() : new Promise(res=>{ im.onload = im.onerror = res; }));
+  Promise.race([Promise.all(waits), sleep(4000)]).then(()=> setTimeout(()=> window.print(), 100));
+}
 function printReportHeader(subtitle){
   const dateNow = new Date().toLocaleDateString('ar-EG', {year:'numeric', month:'long', day:'numeric'});
   return `
@@ -2184,7 +2225,7 @@ function printClassReport(cls, range){
   });
   html += `</tbody></table><div class="rep-footer">تم إنشاء هذا التقرير آلياً بواسطة نظام سِجِلّ — ${escapeHtml(SCHOOL_NAME)}</div>`;
   document.getElementById('print-report').innerHTML = html;
-  setTimeout(()=> window.print(), 50);
+  printWhenReady();
 }
 function recTableHtml(recs, describeFn){
   if(recs.length===0) return `<div style="font-size:12px; color:#888; margin-bottom:10px;">لا توجد سجلات.</div>`;
@@ -2263,7 +2304,7 @@ function printStudentReport(s, cls, sections, range){
   if(sections.homework){
     html += `<div class="rep-section-title">الواجبات</div>` + recTableHtml(inRange(recordsOf(s.id,'homework', true)), r=>{
       const st = r.status==='done'?'منجز':(r.status==='partial'?'جزئي':'غير منجز');
-      const img = r.image ? `<br><img src="${r.image}" style="max-width:130px; max-height:130px; margin-top:4px; border:1px solid #ccc; border-radius:4px;" />` : '';
+      const img = r.image ? `<br><img src="${r.image}" style="max-width:110px; max-height:110px; margin-top:4px; border:1px solid #ccc; border-radius:4px;" />` : '';
       return st + (r.score? ' — الدرجة: '+escapeHtml(r.score):'') + (r.note? ' — '+escapeHtml(r.note):'') + img;
     });
   }
@@ -2272,7 +2313,7 @@ function printStudentReport(s, cls, sections, range){
       let attach = '';
       if(r.file){
         attach = (r.file.mime||'').startsWith('image/')
-          ? `<br><img src="${r.file.data}" style="max-width:130px; max-height:130px; margin-top:4px; border:1px solid #ccc; border-radius:4px;" />`
+          ? `<br><img src="${r.file.data}" style="max-width:110px; max-height:110px; margin-top:4px; border:1px solid #ccc; border-radius:4px;" />`
           : `<br>📎 ${escapeHtml(r.file.name||'ملف مرفق')}`;
       }
       return (r.rating? 'التقييم: '+r.rating+'/5':'') + (r.note? ' — '+escapeHtml(r.note):'') + attach;
@@ -2283,7 +2324,7 @@ function printStudentReport(s, cls, sections, range){
       let attach = '';
       if(r.file){
         attach = (r.file.mime||'').startsWith('image/')
-          ? `<br><img src="${r.file.data}" style="max-width:130px; max-height:130px; margin-top:4px; border:1px solid #ccc; border-radius:4px;" />`
+          ? `<br><img src="${r.file.data}" style="max-width:110px; max-height:110px; margin-top:4px; border:1px solid #ccc; border-radius:4px;" />`
           : `<br>📎 ${escapeHtml(r.file.name||'ملف مرفق')}`;
       }
       return (r.note? escapeHtml(r.note) : '—') + attach;
@@ -2294,7 +2335,7 @@ function printStudentReport(s, cls, sections, range){
   }
   html += `<div class="rep-footer">تم إنشاء هذا التقرير آلياً بواسطة نظام سِجِلّ — ${escapeHtml(SCHOOL_NAME)}</div>`;
   document.getElementById('print-report').innerHTML = html;
-  setTimeout(()=> window.print(), 50);
+  printWhenReady();
 }
 
 function escapeHtml(str){
