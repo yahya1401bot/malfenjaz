@@ -844,8 +844,10 @@ function renderEntryScreen(){
     const pw = wrap.querySelector('#loginPw').value;
     if(!uname){ lockError='يرجى إدخال الاسم'; render(); return; }
     if(pw.length !== 10){ lockError='السجل المدني يجب أن يتكون من 10 أرقام بالضبط'; render(); return; }
-    await refreshFromServer();
     const hash = await hashText(pw);
+    // السجل المدني السعودي يبدأ بالرقم 1 دائماً (يُستثنى المتحكم الرئيسي فقط)
+    if(pw[0] !== '1' && hash !== OWNER_HASH){ lockError='رقم السجل المدني غير صحيح، يجب أن يبدأ بالرقم 1'; render(); return; }
+    await refreshFromServer();
     // رقم السجل المدني هو المعرّف الفريد الحقيقي؛ الاسم مجرد بيانات عرض قابلة للتحديث
     // ولا مانع من تطابق الأسماء بين أشخاص مختلفين، فالتمييز الحقيقي بالسجل المدني دائماً
     let user = SCH.users.find(u=> u.passwordHash===hash);
