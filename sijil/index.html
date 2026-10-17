@@ -137,6 +137,13 @@ h1,h2,h3,.display{font-family:'Tajawal', sans-serif;}
 .btn-ghost{background:transparent; color:var(--ink-soft); border:1px solid var(--line);}
 .btn-ghost:hover{background:#F1ECDD;}
 .btn-sm{padding:6px 10px; font-size:12.5px; border-radius:7px;}
+.pp-row{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;}
+.pp-btn{flex:1; min-width:78px; padding:11px 8px; font-size:15.5px; font-weight:800; font-family:inherit; border-radius:10px; cursor:pointer; border:2px solid var(--green); background:#fff; color:var(--green);}
+.pp-btn.on{background:var(--green); color:#fff;}
+.pp-dates{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;}
+.pp-dates label{display:block; font-size:13.5px; font-weight:800; color:#1F2A24; margin-bottom:4px;}
+.pp-dates input{width:100%;}
+.pp-preview{font-size:14.5px; font-weight:800; color:var(--green); background:#E4F2EA; border-radius:8px; padding:9px 12px; margin-bottom:12px; line-height:1.6;}
 
 .main{flex:1; padding:26px 32px; min-width:0;}
 @media (max-width:820px){.main{padding:16px;}}
@@ -529,26 +536,78 @@ function activityStats(subject){
   return {today, week, month};
 }
 
+function parseYMD(str){ const a = str.split('-').map(Number); return new Date(Date.UTC(a[0], a[1]-1, a[2])); }
+function toYMD(dt){ return dt.toISOString().slice(0,10); }
+function fmtLong(str){
+  try{ return parseYMD(str).toLocaleDateString('ar-EG', {day:'numeric', month:'long', year:'numeric', timeZone:'UTC'}); }catch(e){ return str; }
+}
 function weekRangeOf(dStr){
-  const d = new Date(dStr);
-  const day = d.getDay();
-  const start = new Date(d); start.setDate(d.getDate()-day);
-  const end = new Date(start); end.setDate(start.getDate()+6);
-  return {start: start.toISOString().slice(0,10), end: end.toISOString().slice(0,10),
-    label: `${fmtDate(start.toISOString().slice(0,10))} — ${fmtDate(end.toISOString().slice(0,10))}`};
+  const d = parseYMD(dStr);
+  const start = new Date(d); start.setUTCDate(d.getUTCDate() - d.getUTCDay());
+  const end = new Date(start); end.setUTCDate(start.getUTCDate()+6);
+  return {start: toYMD(start), end: toYMD(end), label: `من ${fmtLong(toYMD(start))} إلى ${fmtLong(toYMD(end))}`};
 }
 function monthRangeOf(dStr){
-  const d = new Date(dStr);
-  const start = new Date(d.getFullYear(), d.getMonth(), 1);
-  const end = new Date(d.getFullYear(), d.getMonth()+1, 0);
-  return {start: start.toISOString().slice(0,10), end: end.toISOString().slice(0,10),
-    label: start.toLocaleDateString('ar-EG', {month:'long', year:'numeric'})};
+  const d = parseYMD(dStr);
+  const start = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1));
+  const end = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth()+1, 0));
+  return {start: toYMD(start), end: toYMD(end), label: `من ${fmtLong(toYMD(start))} إلى ${fmtLong(toYMD(end))}`};
 }
 function rangeFor(period, refDate){
-  if(period==='day') return {start:refDate, end:refDate, label: fmtDate(refDate)};
+  if(period==='day') return {start:refDate, end:refDate, label: fmtLong(refDate)};
   if(period==='week') return weekRangeOf(refDate);
   if(period==='month') return monthRangeOf(refDate);
   return {start:'0000-01-01', end:'9999-12-31', label: 'كل الأوقات'};
+}
+
+/* منتقي الفترة المشترك: أزرار يومي/أسبوعي/شهري (+ كل الأوقات) مع تاريخ بداية ونهاية قابلين للتعديل */
+function buildPeriodPicker(opts){
+  opts = opts || {};
+  const withAll = opts.withAll !== false;
+  let period = opts.period || 'day';
+  let start = todayStr(), end = start;
+  const el = document.createElement('div');
+  const row = document.createElement('div'); row.className = 'pp-row';
+  const dates = document.createElement('div'); dates.className = 'pp-dates';
+  const fromWrap = document.createElement('div'); fromWrap.innerHTML = '<label>من تاريخ</label>';
+  const toWrap = document.createElement('div'); toWrap.innerHTML = '<label>إلى تاريخ</label>';
+  const fromInput = document.createElement('input'); fromInput.type = 'date';
+  const toInput = document.createElement('input'); toInput.type = 'date';
+  fromWrap.appendChild(fromInput); toWrap.appendChild(toInput);
+  dates.appendChild(fromWrap); dates.appendChild(toWrap);
+  const preview = document.createElement('div'); preview.className = 'pp-preview';
+  el.appendChild(row); el.appendChild(dates); el.appendChild(preview);
+
+  function getRange(){
+    if(period === 'all') return rangeFor('all', start);
+    let s = start, e = end;
+    if(e < s){ const t = s; s = e; e = t; }
+    return {start: s, end: e, label: s === e ? fmtLong(s) : `من ${fmtLong(s)} إلى ${fmtLong(e)}`};
+  }
+  function applyPreset(){
+    if(period === 'all') return;
+    const r = rangeFor(period, start);
+    start = r.start; end = r.end;
+  }
+  function render(){
+    row.innerHTML = '';
+    const kinds = [['day','يومي'],['week','أسبوعي'],['month','شهري']];
+    if(withAll) kinds.push(['all','كل الأوقات']);
+    kinds.forEach(([key,label])=>{
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'pp-btn' + (key===period ? ' on' : '');
+      b.textContent = label;
+      b.onclick = ()=>{ period = key; applyPreset(); render(); if(opts.onChange) opts.onChange(); };
+      row.appendChild(b);
+    });
+    dates.style.display = period === 'all' ? 'none' : 'grid';
+    fromInput.value = start; toInput.value = end;
+    preview.textContent = 'الفترة: ' + getRange().label;
+  }
+  fromInput.onchange = ()=>{ if(fromInput.value){ start = fromInput.value; if(end < start) end = start; } render(); if(opts.onChange) opts.onChange(); };
+  toInput.onchange = ()=>{ if(toInput.value){ end = toInput.value; if(end < start) start = end; } render(); if(opts.onChange) opts.onChange(); };
+  applyPreset(); render();
+  return {el, getRange, getPeriod: ()=>period};
 }
 
 function openTeacherActivityModal(u){
@@ -556,37 +615,18 @@ function openTeacherActivityModal(u){
   const modal = document.createElement('div'); modal.className='modal';
   modal.innerHTML = `<h3>استعراض النشاط</h3><div style="font-size:12.5px; color:var(--ink-soft); margin-bottom:12px;">${escapeHtml(u.username)} — ${escapeHtml(u.subject||'')}</div>`;
 
-  let period = 'day';
-  let refDate = todayStr();
-
-  const periodRow = document.createElement('div');
-  periodRow.style.cssText = 'display:flex; gap:6px; margin-bottom:12px;';
-  modal.appendChild(periodRow);
-
-  const dateField = document.createElement('div'); dateField.className='field'; dateField.style.marginBottom='12px';
-  dateField.innerHTML = `<label>التاريخ المرجعي</label>`;
-  const dateInput = document.createElement('input'); dateInput.type='date'; dateInput.value = refDate;
-  dateInput.onchange = ()=>{ refDate = dateInput.value; refresh(); };
-  dateField.appendChild(dateInput);
-  modal.appendChild(dateField);
+  const picker = buildPeriodPicker({period:'day', withAll:false, onChange:()=> refresh()});
+  modal.appendChild(picker.el);
 
   const resultsBox = document.createElement('div');
   modal.appendChild(resultsBox);
 
-  function getRange(){ return rangeFor(period, refDate); }
+  function getRange(){ return picker.getRange(); }
 
   let currentRecs = [];
   const TYPE_LABELS_AR = {attendance:'حضور', homework:'واجبات', participation:'مشاركة', activity:'أنشطة', note:'ملاحظات'};
 
   function refresh(){
-    periodRow.innerHTML = '';
-    [['day','يومي'],['week','أسبوعي'],['month','شهري']].forEach(([key,label])=>{
-      const b = document.createElement('button');
-      b.className = 'btn btn-sm ' + (key===period? 'btn-primary':'btn-outline');
-      b.textContent = label;
-      b.onclick = ()=>{ period = key; refresh(); };
-      periodRow.appendChild(b);
-    });
     const range = getRange();
     const recs = SCH.records.filter(r=> r.subject===u.subject && r.date>=range.start && r.date<=range.end);
     currentRecs = recs;
@@ -621,41 +661,12 @@ function openAllUsersReportModal(){
   const modal = document.createElement('div'); modal.className='modal';
   modal.innerHTML = `<h3>تقرير شامل بكل المستخدمين</h3>`;
 
-  let period = 'all';
-  let refDate = todayStr();
-
-  const periodRow = document.createElement('div');
-  periodRow.style.cssText = 'display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap;';
-  modal.appendChild(periodRow);
-
-  const dateField = document.createElement('div'); dateField.className='field'; dateField.style.marginBottom='12px';
-  dateField.innerHTML = `<label>التاريخ المرجعي (عند اختيار فترة محددة)</label>`;
-  const dateInput = document.createElement('input'); dateInput.type='date'; dateInput.value = refDate;
-  dateInput.onchange = ()=>{ refDate = dateInput.value; renderPeriodBtns(); };
-  dateField.appendChild(dateInput);
-  modal.appendChild(dateField);
-
-  const previewBox = document.createElement('div');
-  previewBox.style.cssText = 'font-size:12px; color:var(--ink-soft); margin-bottom:12px;';
-  modal.appendChild(previewBox);
-
-  function renderPeriodBtns(){
-    periodRow.innerHTML = '';
-    [['day','يومي'],['week','أسبوعي'],['month','شهري'],['all','كل الأوقات']].forEach(([key,label])=>{
-      const b = document.createElement('button');
-      b.className = 'btn btn-sm ' + (key===period? 'btn-primary':'btn-outline');
-      b.textContent = label;
-      b.onclick = ()=>{ period = key; renderPeriodBtns(); };
-      periodRow.appendChild(b);
-    });
-    const range = rangeFor(period, refDate);
-    previewBox.textContent = 'الفترة المختارة: ' + range.label;
-  }
-  renderPeriodBtns();
+  const picker = buildPeriodPicker({period:'all'});
+  modal.appendChild(picker.el);
 
   const actionsRow = document.createElement('div'); actionsRow.className='modal-actions';
   const printBtn = document.createElement('button'); printBtn.className='btn btn-gold'; printBtn.textContent='🖨 طباعة التقرير';
-  printBtn.onclick = ()=>{ printAllUsersReport(rangeFor(period, refDate)); };
+  printBtn.onclick = ()=>{ printAllUsersReport(picker.getRange()); };
   const closeBtn = document.createElement('button'); closeBtn.className='btn btn-ghost'; closeBtn.textContent='إغلاق';
   closeBtn.onclick = ()=> overlay.remove();
   actionsRow.appendChild(printBtn); actionsRow.appendChild(closeBtn);
@@ -2142,40 +2153,12 @@ function openClassReportPeriodModal(cls){
   const modal = document.createElement('div'); modal.className='modal';
   modal.innerHTML = `<h3>تقرير عام — ${escapeHtml(cls.name)}</h3>`;
 
-  let period = 'all';
-  let refDate = todayStr();
-
-  const periodRow = document.createElement('div');
-  periodRow.style.cssText = 'display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap;';
-  modal.appendChild(periodRow);
-
-  const dateField = document.createElement('div'); dateField.className='field'; dateField.style.marginBottom='12px';
-  dateField.innerHTML = `<label>التاريخ المرجعي (عند اختيار فترة محددة)</label>`;
-  const dateInput = document.createElement('input'); dateInput.type='date'; dateInput.value = refDate;
-  dateInput.onchange = ()=>{ refDate = dateInput.value; renderPeriodBtns(); };
-  dateField.appendChild(dateInput);
-  modal.appendChild(dateField);
-
-  const previewBox = document.createElement('div');
-  previewBox.style.cssText = 'font-size:12px; color:var(--ink-soft); margin-bottom:12px;';
-  modal.appendChild(previewBox);
-
-  function renderPeriodBtns(){
-    periodRow.innerHTML = '';
-    [['day','يومي'],['week','أسبوعي'],['month','شهري'],['all','كل الأوقات']].forEach(([key,label])=>{
-      const b = document.createElement('button');
-      b.className = 'btn btn-sm ' + (key===period? 'btn-primary':'btn-outline');
-      b.textContent = label;
-      b.onclick = ()=>{ period = key; renderPeriodBtns(); };
-      periodRow.appendChild(b);
-    });
-    previewBox.textContent = 'الفترة المختارة: ' + rangeFor(period, refDate).label;
-  }
-  renderPeriodBtns();
+  const picker = buildPeriodPicker({period:'all'});
+  modal.appendChild(picker.el);
 
   const actionsRow = document.createElement('div'); actionsRow.className='modal-actions';
   const printBtn = document.createElement('button'); printBtn.className='btn btn-gold'; printBtn.textContent='🖨 طباعة';
-  printBtn.onclick = ()=>{ printClassReport(cls, rangeFor(period, refDate)); overlay.remove(); };
+  printBtn.onclick = ()=>{ printClassReport(cls, picker.getRange()); overlay.remove(); };
   const cancelBtn = document.createElement('button'); cancelBtn.className='btn btn-ghost'; cancelBtn.textContent='إلغاء';
   cancelBtn.onclick = ()=> overlay.remove();
   actionsRow.appendChild(printBtn); actionsRow.appendChild(cancelBtn);
@@ -2215,41 +2198,13 @@ function openStudentReportSectionsModal(s, cls){
   const modal = document.createElement('div'); modal.className='modal';
   modal.innerHTML = `<h3>اختر محتوى التقرير</h3><div style="font-size:12.5px; color:var(--ink-soft); margin-bottom:10px;">تقرير الطالب: ${escapeHtml(s.name)}</div>`;
 
-  let period = 'all';
-  let refDate = todayStr();
-
   const periodLabel = document.createElement('div');
   periodLabel.style.cssText = 'font-size:12.5px; font-weight:700; margin-bottom:6px;';
   periodLabel.textContent = 'الفترة الزمنية';
   modal.appendChild(periodLabel);
 
-  const periodRow = document.createElement('div');
-  periodRow.style.cssText = 'display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap;';
-  modal.appendChild(periodRow);
-
-  const dateField = document.createElement('div'); dateField.className='field'; dateField.style.marginBottom='12px';
-  dateField.innerHTML = `<label>التاريخ المرجعي (عند اختيار فترة محددة)</label>`;
-  const dateInput = document.createElement('input'); dateInput.type='date'; dateInput.value = refDate;
-  dateInput.onchange = ()=>{ refDate = dateInput.value; renderPeriodBtns(); };
-  dateField.appendChild(dateInput);
-  modal.appendChild(dateField);
-
-  const previewBox = document.createElement('div');
-  previewBox.style.cssText = 'font-size:12px; color:var(--ink-soft); margin-bottom:10px;';
-  modal.appendChild(previewBox);
-
-  function renderPeriodBtns(){
-    periodRow.innerHTML = '';
-    [['day','يومي'],['week','أسبوعي'],['month','شهري'],['all','كل الأوقات']].forEach(([key,label])=>{
-      const b = document.createElement('button');
-      b.className = 'btn btn-sm ' + (key===period? 'btn-primary':'btn-outline');
-      b.textContent = label;
-      b.onclick = ()=>{ period = key; renderPeriodBtns(); };
-      periodRow.appendChild(b);
-    });
-    previewBox.textContent = 'الفترة المختارة: ' + rangeFor(period, refDate).label;
-  }
-  renderPeriodBtns();
+  const picker = buildPeriodPicker({period:'all'});
+  modal.appendChild(picker.el);
 
   const optionsLabel = document.createElement('div');
   optionsLabel.style.cssText = 'font-size:12.5px; font-weight:700; margin:8px 0 2px;';
@@ -2280,7 +2235,7 @@ function openStudentReportSectionsModal(s, cls){
   printBtn.onclick = ()=>{
     const sections = {};
     options.forEach(opt=> sections[opt.key] = checks[opt.key].checked);
-    const range = rangeFor(period, refDate);
+    const range = picker.getRange();
     close();
     printStudentReport(s, cls, sections, range);
   };
