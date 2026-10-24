@@ -68,7 +68,7 @@
     .section + .section{break-before:page; page-break-before:always;}
     .branch-title{break-before:page; page-break-before:always; break-after:avoid; page-break-after:avoid;}
     header.top + .branch-title{break-before:auto; page-break-before:auto;}
-    #sec-performance:not(:has(.item)), #sec-studentWork:not(:has(.item)), #sec-certificates:not(:has(.item)), #sec-development:not(:has(.item)){break-before:auto !important; page-break-before:auto !important;}
+    #sec-performance:not(:has(.item)), #sec-studentWork:not(:has(.item)), #sec-certificates:not(:has(.item)), #sec-development:not(:has(.item)), #sec-lifeDev:not(:has(.item)){break-before:auto !important; page-break-before:auto !important;}
     .branch-title:has(+ #sec-performance:not(:has(.item))), .branch-title:has(+ #sec-certificates:not(:has(.item))){break-before:auto !important; page-break-before:auto !important;}
     #ministryLogoWrap{break-inside:avoid; page-break-inside:avoid; break-after:avoid; page-break-after:avoid;}
   }
@@ -159,6 +159,22 @@
     <img class="thumb" id="cv-saved-image" style="margin-top:8px; display:none;">
     <button class="btn btn-primary form-action-btn" style="margin-top:12px" onclick="saveCv()">حفظ</button>
     <div class="save-msg" id="msg-cv">تم الحفظ</div>
+    <h2 style="margin-top:18px; font-size:14.5px;">شهادات مرفقة مع السيرة الذاتية <span class="count" id="count-cvCerts">0</span></h2>
+    <p class="sub">شهادات المؤهلات والدورات التي تدعم سيرتك الذاتية</p>
+    <div id="list-cvCerts"></div>
+    <div class="add-box">
+      <label class="small">صورة الشهادة أو ملف PDF</label>
+      <input type="file" accept="image/*" capture="environment" id="input-camera-cvCerts" onchange="previewImg('cvCerts', this)">
+      <label class="small" style="margin-top:4px;">أو اختر من المعرض</label>
+      <input type="file" accept="image/*,application/pdf" id="input-file-cvCerts" onchange="previewImg('cvCerts', this)">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <img class="thumb" id="thumb-cvCerts" style="margin-bottom:0;">
+        <button class="btn btn-outline" type="button" onclick="clearPreview('cvCerts')" style="padding:6px 10px; font-size:12px;">إزالة</button>
+      </div>
+      <label class="small">ملاحظة توضيحية</label>
+      <textarea id="input-note-cvCerts" placeholder="مثال: شهادة البكالوريوس، شهادة الدبلوم التربوي"></textarea>
+      <button class="btn btn-primary" style="margin-top:8px" onclick="addItem('cvCerts')">إضافة</button>
+    </div>
   </div>
 
   <div class="branch-title">الأداء والتدريس</div>
@@ -219,10 +235,10 @@
 
   <div class="section" id="sec-certificates">
     <h2>الشهادات والتكريم <span class="count" id="count-certificates">0</span></h2>
-    <p class="sub">خطابات شكر وتقدير</p>
+    <p class="sub">خطابات الشكر والتكاليف وشهادات التكريم</p>
     <div id="list-certificates"></div>
     <div class="add-box">
-      <label class="small">صورة الشهادة أو خطاب الشكر</label>
+      <label class="small">صورة الشهادة أو خطاب الشكر أو التكليف</label>
       <input type="file" accept="image/*" capture="environment" id="input-camera-certificates" onchange="previewImg('certificates', this)">
       <label class="small" style="margin-top:4px;">أو اختر من المعرض</label>
       <input type="file" accept="image/*,application/pdf" id="input-file-certificates" onchange="previewImg('certificates', this)">
@@ -231,7 +247,7 @@
         <button class="btn btn-outline" type="button" onclick="clearPreview('certificates')" style="padding:6px 10px; font-size:12px;">إزالة</button>
       </div>
       <label class="small">ملاحظة توضيحية</label>
-      <textarea id="input-note-certificates" placeholder="مثال: خطاب شكر من إدارة المدرسة"></textarea>
+      <textarea id="input-note-certificates" placeholder="مثال: خطاب شكر من إدارة المدرسة، أو خطاب تكليف بمهمة"></textarea>
       <button class="btn btn-primary" style="margin-top:8px" onclick="addItem('certificates')">إضافة</button>
     </div>
   </div>
@@ -252,6 +268,25 @@
       <label class="small">ملاحظة توضيحية</label>
       <textarea id="input-note-development" placeholder="مثال: دورة توظيف التقنية في التعليم"></textarea>
       <button class="btn btn-primary" style="margin-top:8px" onclick="addItem('development')">إضافة</button>
+    </div>
+  </div>
+
+  <div class="section" id="sec-lifeDev">
+    <h2>التطوير في مجالات الحياة <span class="count" id="count-lifeDev">0</span></h2>
+    <p class="sub">دورات ومهارات وإنجازات في الجوانب الشخصية والاجتماعية والصحية والمالية وغيرها</p>
+    <div id="list-lifeDev"></div>
+    <div class="add-box">
+      <label class="small">صورة الشهادة أو الشاهد</label>
+      <input type="file" accept="image/*" capture="environment" id="input-camera-lifeDev" onchange="previewImg('lifeDev', this)">
+      <label class="small" style="margin-top:4px;">أو اختر من المعرض</label>
+      <input type="file" accept="image/*,application/pdf" id="input-file-lifeDev" onchange="previewImg('lifeDev', this)">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <img class="thumb" id="thumb-lifeDev" style="margin-bottom:0;">
+        <button class="btn btn-outline" type="button" onclick="clearPreview('lifeDev')" style="padding:6px 10px; font-size:12px;">إزالة</button>
+      </div>
+      <label class="small">ملاحظة توضيحية</label>
+      <textarea id="input-note-lifeDev" placeholder="مثال: دورة في إدارة الوقت، برنامج لياقة بدنية، دورة في التواصل الأسري"></textarea>
+      <button class="btn btn-primary" style="margin-top:8px" onclick="addItem('lifeDev')">إضافة</button>
     </div>
   </div>
 
@@ -323,7 +358,7 @@ async function driveLoadFromCloud(){
       });
       const cloudData = await res.json();
       if(cloudData && typeof cloudData === 'object'){
-        data = cloudData;
+        data = normalizeData(cloudData);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
         render();
       }
@@ -370,9 +405,15 @@ function loadData(){
   const raw = localStorage.getItem(STORAGE_KEY);
   if(raw){ try{ return JSON.parse(raw); }catch(e){} }
   return { teacherName:'', personal:{qual:'',spec:'',exp:'',photo:null}, cv:{vision:'', file:null},
-           performance:[], studentWork:[], certificates:[], development:[] };
+           performance:[], studentWork:[], certificates:[], development:[], cvCerts:[], lifeDev:[] };
 }
-let data = loadData();
+function normalizeData(d){
+  ['performance','studentWork','certificates','development','cvCerts','lifeDev'].forEach(k=>{ if(!Array.isArray(d[k])) d[k]=[]; });
+  if(!d.personal) d.personal={qual:'',spec:'',exp:'',photo:null};
+  if(!d.cv) d.cv={vision:'',file:null};
+  return d;
+}
+let data = normalizeData(loadData());
 
 function save(){
   let localOk = true;
@@ -426,7 +467,7 @@ function render(){
   if(cvIsImg){ cvSavedImg.src = data.cv.file; cvSavedImg.style.display='block'; }
   else { cvSavedImg.style.display='none'; cvSavedImg.removeAttribute('src'); }
 
-  ['performance','studentWork','certificates','development'].forEach(key=>{
+  ['performance','studentWork','certificates','development','cvCerts','lifeDev'].forEach(key=>{
     const listEl = document.getElementById('list-'+key);
     listEl.innerHTML='';
     (data[key]||[]).forEach(item=>{
@@ -452,13 +493,14 @@ function render(){
     document.getElementById('count-'+key).textContent = (data[key]||[]).length;
   });
 
-  let filled = 0, total = 6;
+  let filled = 0, total = 7;
   if(data.personal.qual) filled++;
-  if(data.cv.vision || data.cv.file) filled++;
+  if(data.cv.vision || data.cv.file || data.cvCerts.length) filled++;
   if(data.performance.length) filled++;
   if(data.studentWork.length) filled++;
   if(data.certificates.length) filled++;
   if(data.development.length) filled++;
+  if(data.lifeDev.length) filled++;
   document.getElementById('progressFill').style.width = Math.round(filled/total*100)+'%';
 
   const hasPersonalData = data.personal.qual || data.personal.spec || data.personal.exp || data.personal.photo;
