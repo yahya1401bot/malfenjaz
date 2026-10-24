@@ -359,8 +359,8 @@ async function driveLoadFromCloud(){
       const cloudData = await res.json();
       if(cloudData && typeof cloudData === 'object'){
         data = normalizeData(cloudData);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-        render();
+        try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }catch(e){ console.warn('local cache full, using Drive only'); }
+        try{ render(); }catch(e){ console.error('render after Drive load failed:', e); }
       }
     } else {
       await driveSaveToCloud();
