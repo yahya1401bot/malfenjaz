@@ -387,6 +387,9 @@
   <div class="qr-box" id="qrBox">
     <h3>باركود الملف</h3>
     <p>انشر نسخة من ملفك على Google Drive برابط يراه من يملك الرابط فقط، فيظهر الباركود على غلاف PDF وWord. الباركود ثابت لا يتغير، وكلما ضغطت «تحديث النسخة المنشورة» يرى من يمسحه آخر ما أضفته.</p>
+    <div style="background:#eef6ff; border:1px solid #bcd7f5; border-radius:8px; padding:9px 12px; margin:0 0 10px; font-size:12.5px; line-height:1.8; color:#1f3d5c;">
+      🔒 <b>عن الإذن الذي ستطلبه Google:</b> عند أول نشر ستظهر لك نافذة موافقة، وهذا إجراء عادي. الإذن خاص <b>بملفات هذا البرنامج فقط</b> (النسخة التي ينشئها لك)، ولا يستطيع البرنامج رؤية أي ملف آخر في Drive الخاص بك. وإذا لم ترغب بالباركود فتجاهل هذا الزر ولن يُطلب منك شيء.
+    </div>
     <div style="display:flex; gap:8px; flex-wrap:wrap;">
       <button class="btn btn-primary" id="btn-publish" onclick="publishCopy()">نشر / تحديث النسخة المنشورة</button>
       <button class="btn btn-outline" id="btn-qr-dl" style="display:none;" onclick="downloadQr()">تحميل الباركود</button>
@@ -1248,6 +1251,7 @@ function setPubStatus(msg){ const el = document.getElementById('pubStatus'); if(
 async function publishCopy(){
   const btn = document.getElementById('btn-publish');
   const old = btn.textContent;
+  if(!pubToken && !confirm('قبل المتابعة:\n\nستظهر لك الآن نافذة من Google تطلب إذناً لإنشاء نسخة من ملفك على Drive.\n\n• الإذن خاص بملفات هذا البرنامج فقط.\n• لا يستطيع البرنامج رؤية أو تعديل أي ملف آخر في Drive.\n• قد تظهر عبارة «Google hasn\'t verified this app»، وهذا طبيعي: اختر Advanced ثم Continue.\n\nهل تريد المتابعة؟')) return;
   btn.disabled = true;
   try{
     btn.textContent = 'بانتظار الموافقة...';
