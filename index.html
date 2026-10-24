@@ -389,7 +389,7 @@
     <button class="btn btn-outline" id="btn-word" onclick="exportWord()">تصدير Word</button>
   </div>
 
-  <footer class="note">يُحفظ كل شيء تلقائياً على هذا الجهاز والمتصفح. لا تمسح بيانات المتصفح حتى لا يضيع ملفك.<br>يمكنك تصدير PDF في أي وقت وبأي عدد مرات — كل تصدير يعكس آخر تحديث دون التأثير على البيانات المحفوظة.</footer>
+  <footer class="note" id="footerNote"></footer>
 </div>
 
 <script src="https://accounts.google.com/gsi/client"></script>
@@ -433,6 +433,12 @@ function connectDrive(){
 function setDriveStatus(connected){
   const btn = document.getElementById('btn-drive');
   if(btn) btn.textContent = connected ? 'متصل بـ Drive ✓' : 'ربط Google Drive';
+  const f = document.getElementById('footerNote');
+  if(f){
+    f.innerHTML = connected
+      ? 'يُحفظ ملفك تلقائياً في حسابك على Google Drive، ويبقى متاحاً من أي جهاز عند ربط Drive بنفس الحساب.<br>يمكنك تصدير PDF أو Word في أي وقت وبأي عدد مرات — كل تصدير يعكس آخر تحديث دون التأثير على البيانات المحفوظة.'
+      : 'لحفظ ملفك بأمان وفتحه من أي جهاز، اضغط «ربط Google Drive» أعلى الصفحة. بدون الربط يُحفظ ملفك على هذا الجهاز والمتصفح فقط، وقد يضيع إذا مُسحت بيانات المتصفح.<br>يمكنك تصدير PDF أو Word في أي وقت وبأي عدد مرات — كل تصدير يعكس آخر تحديث دون التأثير على البيانات المحفوظة.';
+  }
 }
 
 async function driveFindFileId(){
@@ -510,6 +516,7 @@ function normalizeData(d){
   return d;
 }
 let data = normalizeData(loadData());
+window.addEventListener('DOMContentLoaded', ()=>{ try{ setDriveStatus(!!driveAccessToken); }catch(e){} });
 
 function save(){
   let localOk = true;
