@@ -94,7 +94,9 @@
     .item img, .thumb, #cv-saved-image{display:block !important; width:auto !important; max-width:100% !important; height:auto !important; max-height:165mm !important; object-fit:contain; border:none !important; border-radius:0 !important; margin:0 auto 2.5mm !important; break-inside:avoid; page-break-inside:avoid;}
     #cv-saved-image[style*="display: none"]{display:none !important;}
     .pdf-export-temp{display:block !important; width:auto !important; max-width:100% !important; height:auto !important; max-height:215mm !important; object-fit:contain; border:1px solid #e2e0d8 !important; margin:0 auto 3mm !important; break-inside:avoid; page-break-inside:avoid;}
-    .item .body{border-top:1px solid #eee; padding-top:2mm;}
+    .item{display:flex !important; flex-direction:column;}
+    .item .body{order:-1; border-bottom:1px solid #e2e0d8; padding:0 0 2mm; margin-bottom:3mm;}
+    .item .item-title{font-size:13.5pt; font-weight:700; color:var(--accent); margin:0 0 1mm;}
     .item .note{font-size:11pt; margin:0 0 1mm;}
     .item .date{font-size:9pt;}
 
@@ -195,6 +197,8 @@
     <p class="sub cvcerts-head">شهادات المؤهلات والدورات التي تدعم سيرتك الذاتية</p>
     <div id="list-cvCerts"></div>
     <div class="add-box">
+      <label class="small">عنوان الشاهد (اختياري) — يظهر قبل الشاهد في التصدير</label>
+      <input type="text" id="input-title-cvCerts" placeholder="مثال: الخطة الفصلية — الصف الأول المتوسط" style="margin-bottom:8px;">
       <label class="small">صورة الشهادة أو ملف PDF</label>
       <input type="file" accept="image/*" capture="environment" id="input-camera-cvCerts" onchange="previewImg('cvCerts', this)">
       <label class="small" style="margin-top:4px;">أو اختر من المعرض</label>
@@ -249,6 +253,8 @@
     <p class="sub">واجبات ومشاريع وأنشطة</p>
     <div id="list-studentWork"></div>
     <div class="add-box">
+      <label class="small">عنوان الشاهد (اختياري) — يظهر قبل الشاهد في التصدير</label>
+      <input type="text" id="input-title-studentWork" placeholder="مثال: الخطة الفصلية — الصف الأول المتوسط" style="margin-bottom:8px;">
       <label class="small">صورة الواجب أو النشاط أو المشروع</label>
       <input type="file" accept="image/*" capture="environment" id="input-camera-studentWork" onchange="previewImg('studentWork', this)">
       <label class="small" style="margin-top:4px;">أو اختر من المعرض</label>
@@ -270,6 +276,8 @@
     <p class="sub">خطابات الشكر والتكاليف وشهادات التكريم</p>
     <div id="list-certificates"></div>
     <div class="add-box">
+      <label class="small">عنوان الشاهد (اختياري) — يظهر قبل الشاهد في التصدير</label>
+      <input type="text" id="input-title-certificates" placeholder="مثال: الخطة الفصلية — الصف الأول المتوسط" style="margin-bottom:8px;">
       <label class="small">صورة الشهادة أو خطاب الشكر أو التكليف</label>
       <input type="file" accept="image/*" capture="environment" id="input-camera-certificates" onchange="previewImg('certificates', this)">
       <label class="small" style="margin-top:4px;">أو اختر من المعرض</label>
@@ -289,6 +297,8 @@
     <p class="sub">دورات وورش عمل</p>
     <div id="list-development"></div>
     <div class="add-box">
+      <label class="small">عنوان الشاهد (اختياري) — يظهر قبل الشاهد في التصدير</label>
+      <input type="text" id="input-title-development" placeholder="مثال: الخطة الفصلية — الصف الأول المتوسط" style="margin-bottom:8px;">
       <label class="small">صورة الشهادة التدريبية</label>
       <input type="file" accept="image/*" capture="environment" id="input-camera-development" onchange="previewImg('development', this)">
       <label class="small" style="margin-top:4px;">أو اختر من المعرض</label>
@@ -308,6 +318,8 @@
     <p class="sub">دورات ومهارات وإنجازات في الجوانب الشخصية والاجتماعية والصحية والمالية وغيرها</p>
     <div id="list-lifeDev"></div>
     <div class="add-box">
+      <label class="small">عنوان الشاهد (اختياري) — يظهر قبل الشاهد في التصدير</label>
+      <input type="text" id="input-title-lifeDev" placeholder="مثال: الخطة الفصلية — الصف الأول المتوسط" style="margin-bottom:8px;">
       <label class="small">صورة الشهادة أو الشاهد</label>
       <input type="file" accept="image/*" capture="environment" id="input-camera-lifeDev" onchange="previewImg('lifeDev', this)">
       <label class="small" style="margin-top:4px;">أو اختر من المعرض</label>
@@ -511,12 +523,16 @@ function render(){
           ${item.img && !isPdf ? `<img src="${item.img}">` : ''}
           ${isPdf ? `<div class="pdf-badge" data-key="${key}" data-id="${item.id}" style="width:64px; height:64px; border-radius:8px; background:var(--accent-light); color:var(--accent); display:flex; align-items:center; justify-content:center; font-size:11px; flex-shrink:0;">PDF</div>` : ''}
           <div class="body">
-            ${item.title ? `<p class="note" style="font-weight:600">${escapeHtml(item.title)}</p>` : ''}
+            ${item.title ? `<p class="note item-title" style="font-weight:600">${escapeHtml(item.title)}</p>` : ''}
             <p class="note">${escapeHtml(item.note||'')}</p>
             <p class="date">${item.date}</p>
           </div>
           <div class="item-actions" style="display:flex; flex-direction:column; gap:4px; flex-shrink:0;">
             ${item.img ? `<button class="btn btn-outline item-view-btn" style="padding:4px 10px; font-size:11.5px;" onclick="previewFile('${key}','${item.id}')">استعراض</button>` : ''}
+            <div class="item-view-btn" style="display:flex; gap:4px;">
+              <button class="btn btn-outline" style="padding:2px 8px; font-size:11.5px;" title="تقديم" onclick="moveItem('${key}','${item.id}',-1)">▲</button>
+              <button class="btn btn-outline" style="padding:2px 8px; font-size:11.5px;" title="تأخير" onclick="moveItem('${key}','${item.id}',1)">▼</button>
+            </div>
             <button class="del" onclick="deleteItem('${key}','${item.id}')">حذف</button>
           </div>`;
         listEl.appendChild(div);
@@ -908,6 +924,15 @@ function closePreview(e){
     document.getElementById('previewModal').classList.add('hidden');
     document.getElementById('previewImg').src='';
   }
+}
+
+function moveItem(key, id, dir){
+  const arr = data[key]||[];
+  const i = arr.findIndex(x=>x.id===id);
+  const j = i+dir;
+  if(i<0 || j<0 || j>=arr.length) return;
+  const t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+  save(); render();
 }
 
 function deleteItem(key, id){
