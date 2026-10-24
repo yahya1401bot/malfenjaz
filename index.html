@@ -57,7 +57,7 @@
   .export-bar{position:sticky; bottom:0; background:var(--card); border:1px solid var(--border); border-radius:14px; padding:12px; margin:16px 0; text-align:center;}
   .export-bar .btn{width:100%; padding:12px;}
   .print-title, .print-text{display:none;}
-  @page{ size:A4 portrait; margin:12mm 11mm; @bottom-center{ content: counter(page) " / " counter(pages); font-size:9pt; color:#777; } }
+  @page{ size:A4 portrait; margin:12mm 11mm; @bottom-center{ content: counter(page); font-size:9pt; color:#777; } }
   @media print{
     *{-webkit-print-color-adjust:exact; print-color-adjust:exact;}
     html, body{background:#fff;}
