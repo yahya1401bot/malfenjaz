@@ -108,6 +108,7 @@
     .item .body{order:-1; border-bottom:1px solid #e2e0d8; padding:0 0 2mm; margin-bottom:3mm;}
     .item .item-title{font-size:13.5pt; font-weight:700; color:var(--accent); margin:0 0 1mm;}
     .item .note{font-size:11pt; margin:0 0 1mm;}
+    .item[data-sec]:not(:first-child)::before{content:attr(data-sec); order:-2; display:block; width:100%; font-size:11pt; font-weight:700; color:var(--accent); background:var(--accent-light); border-right:1.2mm solid var(--accent); padding:1.5mm 3mm; margin:0 0 3mm;}
     .item .date{display:none !important;}
     .item .body:not(:has(.item-title)):not(:has(.note:not(:empty))){display:none !important;}
 
@@ -853,6 +854,14 @@ function preparePrint(){
       else if(!prevWasTitle && el.id!=='sec-cv') el.classList.add('p-break');
     }
     first=false; prevWasTitle=isTitle;
+  });
+  ['performance','studentWork','certificates','development','cvCerts','lifeDev'].forEach(key=>{
+    const h = key==='cvCerts' ? document.querySelector('h2.cvcerts-head') : document.querySelector('#sec-'+key+' h2');
+    if(!h) return;
+    const c = h.cloneNode(true);
+    c.querySelectorAll('.count,button').forEach(x=>x.remove());
+    const name = c.textContent.trim();
+    document.querySelectorAll('#list-'+key+' .item').forEach(it=> it.setAttribute('data-sec', name));
   });
   const ta = document.getElementById('f-vision');
   const pv = document.getElementById('print-vision');
