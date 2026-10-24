@@ -17,6 +17,11 @@
   header.top .info{flex:1; min-width:0;}
   header.top h1{font-size:17px; margin:0 0 2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   header.top p{font-size:13px; color:var(--muted); margin:0;}
+  .drive-banner{display:none; width:100%; align-items:center; gap:12px; text-align:right; background:var(--danger-light); color:var(--danger); border:2px solid var(--danger); border-radius:14px; padding:12px 14px; margin:0 0 14px; font-family:inherit; font-size:13.5px; line-height:1.6; cursor:pointer; animation:dbPulse 2s ease-in-out infinite;}
+  .drive-banner.show{display:flex;}
+  .drive-banner .db-icon{font-size:26px; flex-shrink:0;}
+  @keyframes dbPulse{0%,100%{box-shadow:0 0 0 0 rgba(153,60,29,.35);} 50%{box-shadow:0 0 0 7px rgba(153,60,29,0);}}
+  @media (prefers-reduced-motion: reduce){ .drive-banner{animation:none;} }
   .edit-name.drive-on{color:var(--accent); border-color:var(--accent); background:var(--accent-light); font-weight:600;}
   .edit-name.drive-off{color:var(--danger); border-color:var(--danger); background:var(--danger-light); font-weight:600;}
   .edit-name{border:1px solid var(--border); background:var(--card); border-radius:8px; padding:6px 10px; font-size:12px; cursor:pointer; color:var(--muted);}
@@ -73,7 +78,7 @@
     html, body{background:#fff;}
     body{font-size:11.5pt; line-height:1.6;}
     .wrap{max-width:none; padding:0;}
-    .edit-name, .add-box, .export-bar, .del, #setupModal, input[type=file], .upload-controls, #thumb-photo, #cv-attached, .form-action-btn, .item-view-btn, #previewModal, .progress-bar, header.top > div:last-child, footer.note, .qr-box, .p-hide{display:none !important;}
+    .edit-name, .add-box, .export-bar, .del, #setupModal, input[type=file], .upload-controls, #thumb-photo, #cv-attached, .form-action-btn, .item-view-btn, #previewModal, .progress-bar, header.top > div:last-child, footer.note, .qr-box, .drive-banner, .p-hide{display:none !important;}
 
     /* cover page */
     .print-cover{display:flex; flex-direction:column; justify-content:space-between; align-items:center; text-align:center; height:268mm; break-after:page; page-break-after:always; padding:4mm 0;}
@@ -184,6 +189,11 @@
       <button class="edit-name" id="btn-drive" onclick="connectDrive()">ربط Google Drive</button>
     </div>
   </header>
+
+  <button type="button" class="drive-banner" id="driveBanner" onclick="connectDrive()">
+    <span class="db-icon">⚠</span>
+    <span class="db-text"><b>انتبه: ملفك غير مربوط بحسابك!</b><br>اضغط هنا لربط Google Drive وحفظ ملفك بأمان وفتحه من أي جهاز</span>
+  </button>
 
   <div class="branch-title">الهوية والسيرة</div>
 
@@ -439,6 +449,8 @@ function setDriveStatus(connected){
     btn.classList.toggle('drive-on', !!connected);
     btn.classList.toggle('drive-off', !connected);
   }
+  const bn = document.getElementById('driveBanner');
+  if(bn) bn.classList.toggle('show', !connected);
   const f = document.getElementById('footerNote');
   if(f){
     f.innerHTML = connected
