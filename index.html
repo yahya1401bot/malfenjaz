@@ -385,15 +385,20 @@
   </div>
 
   <div class="qr-box" id="qrBox">
-    <h3>باركود الملف (اختياري)</h3>
-    <p>صدّر ملفك PDF وارفعه إلى Google Drive أو OneDrive، ثم انسخ رابط المشاركة والصقه هنا. سيظهر باركود يفتح ملفك على غلاف التصدير (PDF وWord).</p>
-    <input type="text" id="f-sharelink" dir="ltr" placeholder="https://...">
-    <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
-      <button class="btn btn-primary" onclick="saveShareLink()">إنشاء الباركود</button>
+    <h3>باركود الملف</h3>
+    <p>انشر نسخة من ملفك على Google Drive برابط يراه من يملك الرابط فقط، فيظهر الباركود على غلاف PDF وWord. الباركود ثابت لا يتغير، وكلما ضغطت «تحديث النسخة المنشورة» يرى من يمسحه آخر ما أضفته.</p>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <button class="btn btn-primary" id="btn-publish" onclick="publishCopy()">نشر / تحديث النسخة المنشورة</button>
       <button class="btn btn-outline" id="btn-qr-dl" style="display:none;" onclick="downloadQr()">تحميل الباركود</button>
-      <button class="btn btn-outline" id="btn-qr-del" style="display:none;" onclick="clearShareLink()">إزالة</button>
+      <button class="btn btn-outline" id="btn-qr-del" style="display:none;" onclick="unpublishCopy()">إيقاف النشر</button>
     </div>
+    <div class="save-msg" id="pubStatus" style="display:block; color:var(--muted); margin-top:8px;"></div>
     <img id="qrPreview" alt="باركود الملف" style="display:none; width:150px; height:150px; margin-top:10px; border:1px solid var(--border); border-radius:8px;">
+    <details style="margin-top:10px;">
+      <summary style="font-size:12.5px; color:var(--muted); cursor:pointer;">أو الصق رابطاً من عندك</summary>
+      <input type="text" id="f-sharelink" dir="ltr" placeholder="https://..." style="margin-top:8px;">
+      <button class="btn btn-outline" style="margin-top:8px;" onclick="saveShareLink()">إنشاء الباركود من الرابط</button>
+    </details>
   </div>
 
   <div class="export-bar">
@@ -531,6 +536,8 @@ function normalizeData(d){
   if(!d.personal) d.personal={qual:'',spec:'',exp:'',photo:null};
   if(!d.cv) d.cv={vision:'',file:null};
   if(typeof d.shareLink!=='string') d.shareLink='';
+  if(typeof d.pubFileId!=='string') d.pubFileId='';
+  if(typeof d.pubAt!=='number') d.pubAt=0;
   return d;
 }
 let data = normalizeData(loadData());
@@ -1184,6 +1191,7 @@ function refreshQr(){
   if(!inp || !img) return;
   const link = (data.shareLink||'').trim();
   if(document.activeElement !== inp) inp.value = link;
+  if(data.pubAt) setPubStatus('آخر تحديث للنسخة المنشورة: ' + new Date(data.pubAt).toLocaleString('ar-SA'));
   const dl = document.getElementById('btn-qr-dl'), del = document.getElementById('btn-qr-del');
   if(link){
     const u = qrUrlFor(link);
@@ -1204,6 +1212,88 @@ function clearShareLink(){
   data.shareLink = '';
   save(); refreshQr();
 }
+
+/* ===== publish a shareable copy to Drive (drive.file scope, requested only when publishing) ===== */
+const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+let pubToken = null, pubClient = null, pubResolve = null, pubReject = null;
+function getPubToken(){
+  return new Promise((resolve, reject)=>{
+    if(pubToken) return resolve(pubToken);
+    if(!window.google || !google.accounts || !google.accounts.oauth2) return reject(new Error('تحتاج اتصالاً بالإنترنت'));
+    pubResolve = resolve; pubReject = reject;
+    if(!pubClient){
+      pubClient = google.accounts.oauth2.initTokenClient({
+        client_id: GOOGLE_CLIENT_ID,
+        scope: 'https://www.googleapis.com/auth/drive.file',
+        callback: (r)=>{
+          if(r.error){ pubReject(new Error('لم تتم الموافقة على صلاحية النشر: ' + r.error)); return; }
+          pubToken = r.access_token; pubResolve(pubToken);
+        },
+        error_callback: (e)=>{ pubReject(new Error('أُغلقت نافذة الموافقة')); }
+      });
+    }
+    pubClient.requestAccessToken();
+  });
+}
+async function pubApi(url, opts){
+  const r = await fetch(url, opts);
+  if(r.status===401){ pubToken = null; throw new Error('انتهت الجلسة، اضغط الزر مرة أخرى'); }
+  if(!r.ok){
+    let t=''; try{ t = (await r.text()).slice(0,200); }catch(e){}
+    throw new Error('Drive ' + r.status + ' ' + t);
+  }
+  return r;
+}
+function setPubStatus(msg){ const el = document.getElementById('pubStatus'); if(el) el.textContent = msg||''; }
+async function publishCopy(){
+  const btn = document.getElementById('btn-publish');
+  const old = btn.textContent;
+  btn.disabled = true;
+  try{
+    btn.textContent = 'بانتظار الموافقة...';
+    const tk = await getPubToken();
+    const H = {Authorization:'Bearer '+tk};
+    const nm = (data.teacherName||'المعلم').trim();
+    const fname = 'ملف إنجاز - ' + nm + '.docx';
+    let id = data.pubFileId || '';
+    if(id){
+      try{
+        const r = await fetch('https://www.googleapis.com/drive/v3/files/'+id+'?fields=id,trashed', {headers:H});
+        if(!r.ok || (await r.json()).trashed) id = '';
+      }catch(e){ id=''; }
+    }
+    if(!id){
+      btn.textContent = 'ينشئ النسخة...';
+      const r = await pubApi('https://www.googleapis.com/drive/v3/files?fields=id', {method:'POST', headers:Object.assign({'Content-Type':'application/json'},H), body:JSON.stringify({name:fname, mimeType:DOCX_MIME})});
+      id = (await r.json()).id;
+      await pubApi('https://www.googleapis.com/drive/v3/files/'+id+'/permissions', {method:'POST', headers:Object.assign({'Content-Type':'application/json'},H), body:JSON.stringify({role:'reader', type:'anyone'})});
+      data.pubFileId = id;
+    }
+    data.shareLink = 'https://drive.google.com/file/d/'+id+'/view';
+    const blob = await buildWordBlob((i,n)=>{ btn.textContent = 'يجهّز الملفات... ('+i+'/'+n+')'; });
+    btn.textContent = 'يرفع النسخة...';
+    await pubApi('https://www.googleapis.com/upload/drive/v3/files/'+id+'?uploadType=media&fields=id', {method:'PATCH', headers:Object.assign({'Content-Type':DOCX_MIME},H), body:blob});
+    data.pubAt = Date.now();
+    save(); refreshQr();
+    setPubStatus('تم النشر. آخر تحديث: ' + new Date(data.pubAt).toLocaleString('ar-SA'));
+  }catch(e){
+    console.error('publish failed', e);
+    alert('تعذّر نشر النسخة: ' + (e && e.message ? e.message : e));
+  }
+  btn.disabled = false; btn.textContent = old;
+}
+async function unpublishCopy(){
+  const id = data.pubFileId;
+  try{
+    if(id){
+      const tk = await getPubToken();
+      await fetch('https://www.googleapis.com/drive/v3/files/'+id, {method:'DELETE', headers:{Authorization:'Bearer '+tk}});
+    }
+  }catch(e){ console.warn('unpublish', e); }
+  data.pubFileId=''; data.pubAt=0; data.shareLink='';
+  save(); refreshQr(); setPubStatus('أُوقف النشر وحُذفت النسخة المنشورة.');
+}
+
 function downloadBlob(blob, name){
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob); a.download = name;
