@@ -500,6 +500,17 @@ async function driveLoadFromCloud(){
   driveSyncing = false;
 }
 
+let driveSaveTimer = null, driveSaveBusy = false, driveSaveAgain = false;
+function driveSaveSoon(){
+  clearTimeout(driveSaveTimer);
+  driveSaveTimer = setTimeout(async ()=>{
+    if(driveSaveBusy){ driveSaveAgain = true; return; }
+    driveSaveBusy = true;
+    try{ await driveSaveToCloud(); }catch(e){}
+    driveSaveBusy = false;
+    if(driveSaveAgain){ driveSaveAgain = false; driveSaveSoon(); }
+  }, 1500);
+}
 async function driveSaveToCloud(){
   if(!driveAccessToken) return;
   const content = JSON.stringify(data);
@@ -555,7 +566,7 @@ function save(){
     localOk = false;
   }
 
-  if(driveAccessToken && !driveSyncing){ driveSaveToCloud(); }
+  if(driveAccessToken && !driveSyncing){ driveSaveSoon(); }
 
   if(!localOk && !driveAccessToken){
     alert('تعذّر الحفظ. مساحة تخزين المتصفح المحلي امتلأت (منفصلة عن مساحة Drive). اضغط "ربط Google Drive" فوق الصفحة ليعتمد الحفظ على درايفك بدلاً من المتصفح، أو جرّب ملف أصغر.');
@@ -608,7 +619,7 @@ function render(){
         div.className='item';
         const isPdf = item.img && item.img.startsWith('data:application/pdf');
         div.innerHTML = `
-          ${item.img && !isPdf ? `<img src="${item.img}">` : ''}
+          ${item.img && !isPdf ? `<img data-tid="${item.id}" data-tkey="${key}" decoding="async"${item.th ? ` src="${item.th}"` : ''}>` : ''}
           ${isPdf ? `<div class="pdf-badge" data-key="${key}" data-id="${item.id}" style="width:64px; height:64px; border-radius:8px; background:var(--accent-light); color:var(--accent); display:flex; align-items:center; justify-content:center; font-size:11px; flex-shrink:0;">PDF</div>` : ''}
           <div class="body">
             ${item.title ? `<p class="note item-title" style="font-weight:600">${escapeHtml(item.title)}</p>` : ''}
@@ -629,6 +640,7 @@ function render(){
     document.getElementById('count-'+key).textContent = (data[key]||[]).length;
   });
 
+  scheduleThumbs();
   let filled = 0, total = 7;
   if(data.personal.qual) filled++;
   if(data.cv.vision || data.cv.file || data.cvCerts.length) filled++;
@@ -868,6 +880,11 @@ async function exportPdf(){
     }
   }
 
+  if(btn){ btn.textContent = 'يجهّز الصور...'; }
+  try{
+    const pend = swapFullImages();
+    await Promise.all(pend.map(el=> (el.decode ? el.decode().catch(()=>{}) : Promise.resolve())));
+  }catch(e){}
   if(btn){ btn.disabled = false; btn.textContent = 'تصدير PDF'; }
   window.print();
 }
@@ -1492,12 +1509,68 @@ function cleanupPrint(){
   const pv = document.getElementById('print-vision');
   if(pv) pv.textContent='';
 }
-window.addEventListener('beforeprint', preparePrint);
+window.addEventListener('beforeprint', ()=>{ try{ swapFullImages(); }catch(e){} preparePrint(); });
 window.addEventListener('afterprint', ()=>{
   cleanupPrint();
   document.querySelectorAll('.pdf-export-temp').forEach(el=> el.remove());
   render();
 });
+
+
+/* ===== small thumbnails in the lists (keeps memory low; full image only for print/preview) ===== */
+function makeThumb(dataUrl, maxDim){
+  return new Promise((resolve)=>{
+    if(!dataUrl || !dataUrl.startsWith('data:image')) return resolve(null);
+    const img = new Image();
+    img.onload = ()=>{
+      try{
+        let w = img.naturalWidth, h = img.naturalHeight;
+        const k = Math.min(1, maxDim/Math.max(w,h));
+        w = Math.max(1, Math.round(w*k)); h = Math.max(1, Math.round(h*k));
+        const c = document.createElement('canvas'); c.width = w; c.height = h;
+        c.getContext('2d').drawImage(img, 0, 0, w, h);
+        const out = c.toDataURL('image/jpeg', 0.7);
+        c.width = c.height = 0;
+        resolve(out);
+      }catch(e){ resolve(null); }
+      img.onload = img.onerror = null; img.src = '';
+    };
+    img.onerror = ()=> resolve(null);
+    img.src = dataUrl;
+  });
+}
+let thumbBusy = false, thumbTimer = null;
+function scheduleThumbs(){ clearTimeout(thumbTimer); thumbTimer = setTimeout(fillThumbs, 60); }
+async function fillThumbs(){
+  if(thumbBusy) return;
+  thumbBusy = true;
+  let changed = false;
+  try{
+    const keys = ['performance','studentWork','certificates','development','cvCerts','lifeDev'];
+    for(const key of keys){
+      for(const item of (data[key]||[])){
+        if(!item.img || item.th || !item.img.startsWith('data:image')) continue;
+        const th = await makeThumb(item.img, 240);
+        if(th){
+          item.th = th; changed = true;
+          const el = document.querySelector('img[data-tid="'+item.id+'"]');
+          if(el) el.src = th;
+        }
+        await new Promise(r=> setTimeout(r, 20));
+      }
+    }
+  }catch(e){ console.warn('thumbs failed', e); }
+  thumbBusy = false;
+  if(changed){ try{ save(); }catch(e){} }
+}
+function swapFullImages(){
+  const pending = [];
+  document.querySelectorAll('img[data-tid]').forEach(el=>{
+    const item = (data[el.dataset.tkey]||[]).find(i=>i.id===el.dataset.tid);
+    if(item && item.img && el.src !== item.img){ el.src = item.img; pending.push(el); }
+  });
+  return pending;
+}
 
 function processFile(file, maxDim){
   if(file.type==='application/pdf') return fileToDataURL(file);
@@ -1537,9 +1610,10 @@ function addItem(key){
     return;
   }
 
-  const pushItem = (imgData)=>{
+  const pushItem = async (imgData)=>{
     const item = { id: Date.now().toString(36)+Math.random().toString(36).slice(2,6),
                     title, note, img: imgData||null, date: todayStr() };
+    if(imgData){ const th = await makeThumb(imgData, 240); if(th) item.th = th; }
     data[key].push(item);
     if(!save()){ data[key].pop(); return; }
     render();
