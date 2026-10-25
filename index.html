@@ -187,6 +187,7 @@
     <div style="display:flex; flex-direction:column; gap:6px; align-items:stretch; flex-shrink:0;">
       <button class="edit-name" onclick="editName()">تعديل الاسم</button>
       <button class="edit-name" id="btn-drive" onclick="connectDrive()">ربط Google Drive</button>
+      <button class="edit-name" id="btn-logout" onclick="logoutApp()">خروج</button>
     </div>
   </header>
 
@@ -516,11 +517,12 @@ async function driveSaveToCloud(){
   const content = JSON.stringify(data);
   try{
     if(driveFileId){
-      await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, {
+      const pr = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, {
         method:'PATCH',
         headers:{ Authorization:'Bearer ' + driveAccessToken, 'Content-Type':'application/json' },
         body: content
       });
+      if(!pr.ok) return false;
     } else {
       const metadata = { name: DRIVE_FILENAME, parents: ['appDataFolder'] };
       const boundary = 'malaf_injaz_boundary';
@@ -534,9 +536,12 @@ async function driveSaveToCloud(){
       });
       const json = await res.json();
       driveFileId = json.id;
+      if(!driveFileId) return false;
     }
+    return true;
   }catch(e){
     console.error('Drive save failed:', e);
+    return false;
   }
 }
 
@@ -1756,6 +1761,32 @@ document.addEventListener('input', saveUiSoon);
 document.addEventListener('change', saveUiSoon);
 document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden') saveUi(); });
 window.addEventListener('pagehide', saveUi);
+
+/* ===== logout: make sure everything is in Drive, then clear this device ===== */
+async function logoutApp(){
+  if(!driveAccessToken){
+    alert('ملفك غير مربوط بحسابك، فلو خرجت الآن قد تضيع بياناتك من هذا الجهاز.\n\nاضغط «ربط Google Drive» أولاً، أو صدّر ملفك PDF/Word، ثم اخرج.');
+    return;
+  }
+  if(!confirm('سيُحفظ ملفك في حسابك على Drive ثم تُمسح نسخته من هذا الجهاز.\nتستطيع فتحه بحسابك في أي وقت.\n\nهل تريد الخروج؟')) return;
+  const btn = document.getElementById('btn-logout');
+  if(btn){ btn.disabled = true; btn.textContent = 'يحفظ...'; }
+  clearTimeout(driveSaveTimer);
+  let ok = false;
+  try{
+    for(let i=0;i<20 && driveSaveBusy;i++) await new Promise(r=>setTimeout(r,250));
+    ok = await driveSaveToCloud();
+  }catch(e){ ok = false; }
+  if(!ok){
+    if(btn){ btn.disabled = false; btn.textContent = 'خروج'; }
+    alert('تعذّر حفظ ملفك في Drive الآن (تأكد من الإنترنت). لم أمسح شيئاً من جهازك، حاول مرة أخرى.');
+    return;
+  }
+  try{ localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(UI_KEY); }catch(e){}
+  try{ }catch(e){}
+  driveAccessToken = null; pubToken = null;
+  document.body.innerHTML = '<div style="font-family:inherit;direction:rtl;text-align:center;padding:60px 20px;color:#1f4e79;"><h2>تم الخروج وحفظ ملفك في حسابك ✓</h2><p style="color:#667;">لفتح ملفك مرة أخرى: افتح الرابط واضغط «ربط Google Drive».</p><button onclick="location.reload()" style="margin-top:14px;padding:10px 22px;border-radius:10px;border:0;background:#1f4e79;color:#fff;font-size:15px;cursor:pointer;">العودة للبرنامج</button></div>';
+}
 
 // init
 if(data.teacherName){
