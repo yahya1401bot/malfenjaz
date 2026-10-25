@@ -1763,30 +1763,48 @@ document.addEventListener('change', saveUiSoon);
 document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden') saveUi(); });
 window.addEventListener('pagehide', saveUi);
 
-/* ===== logout: make sure everything is in Drive, then clear this device ===== */
-async function logoutApp(){
-  if(!driveAccessToken){
-    alert('ملفك غير مربوط بحسابك، فلو خرجت الآن قد تضيع بياناتك من هذا الجهاز.\n\nاضغط «ربط Google Drive» أولاً، أو صدّر ملفك PDF/Word، ثم اخرج.');
-    return;
+/* ===== logout: save to Drive, optionally keep a copy on this device ===== */
+function logoutApp(){
+  const old = document.getElementById('logoutModal'); if(old) old.remove();
+  const connected = !!driveAccessToken;
+  const m = document.createElement('div');
+  m.id = 'logoutModal';
+  m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;';
+  m.innerHTML = '<div style="background:#fff;border-radius:14px;max-width:380px;width:100%;padding:20px 22px;direction:rtl;font-size:14px;line-height:1.9;color:#1c2b3a;">'
+    + '<h3 style="margin:0 0 8px;font-size:17px;">الخروج من البرنامج</h3>'
+    + '<p style="margin:0 0 10px;">' + (connected
+        ? 'سيُحفظ ملفك في حسابك على Google Drive، وتستطيع فتحه بحسابك في أي وقت.'
+        : 'ملفك غير مربوط بـ Google Drive، لذلك سيبقى محفوظاً على هذا الجهاز فقط.') + '</p>'
+    + '<label style="display:flex;gap:8px;align-items:flex-start;background:#f3f6fa;border-radius:10px;padding:9px 11px;cursor:pointer;">'
+    + '<input type="checkbox" id="lg-keep" style="width:18px;height:18px;margin-top:4px;flex-shrink:0;"' + (connected ? '' : ' checked disabled') + '>'
+    + '<span>إبقاء نسخة من ملفي على هذا الجهاز<br><small style="color:#667;">اتركها بلا علامة إذا كان الجهاز مشتركاً أو غير شخصي، فتُمسح بياناتك منه بعد الحفظ.</small></span></label>'
+    + '<div style="display:flex;gap:8px;margin-top:14px;">'
+    + '<button id="lg-ok" style="flex:1;padding:10px;border:0;border-radius:10px;background:#1f4e79;color:#fff;font-size:14.5px;cursor:pointer;">خروج</button>'
+    + '<button id="lg-cancel" style="flex:1;padding:10px;border:1px solid #cfd8e3;border-radius:10px;background:#fff;color:#1c2b3a;font-size:14.5px;cursor:pointer;">إلغاء</button></div></div>';
+  document.body.appendChild(m);
+  document.getElementById('lg-cancel').onclick = ()=> m.remove();
+  document.getElementById('lg-ok').onclick = ()=> doLogout(document.getElementById('lg-keep').checked, m);
+}
+async function doLogout(keepLocal, m){
+  const okBtn = document.getElementById('lg-ok');
+  if(okBtn){ okBtn.disabled = true; okBtn.textContent = 'يحفظ...'; }
+  if(driveAccessToken){
+    clearTimeout(driveSaveTimer);
+    let ok = false;
+    try{
+      for(let i=0;i<20 && driveSaveBusy;i++) await new Promise(r=>setTimeout(r,250));
+      ok = await driveSaveToCloud();
+    }catch(e){ ok = false; }
+    if(!ok){
+      if(okBtn){ okBtn.disabled = false; okBtn.textContent = 'خروج'; }
+      alert('تعذّر حفظ ملفك في Drive الآن (تأكد من الإنترنت). لم أمسح شيئاً من جهازك، حاول مرة أخرى.');
+      return;
+    }
   }
-  if(!confirm('سيُحفظ ملفك في حسابك على Drive ثم تُمسح نسخته من هذا الجهاز.\nتستطيع فتحه بحسابك في أي وقت.\n\nهل تريد الخروج؟')) return;
-  const btn = document.getElementById('btn-logout');
-  if(btn){ btn.disabled = true; btn.textContent = 'يحفظ...'; }
-  clearTimeout(driveSaveTimer);
-  let ok = false;
-  try{
-    for(let i=0;i<20 && driveSaveBusy;i++) await new Promise(r=>setTimeout(r,250));
-    ok = await driveSaveToCloud();
-  }catch(e){ ok = false; }
-  if(!ok){
-    if(btn){ btn.disabled = false; btn.textContent = 'خروج'; }
-    alert('تعذّر حفظ ملفك في Drive الآن (تأكد من الإنترنت). لم أمسح شيئاً من جهازك، حاول مرة أخرى.');
-    return;
-  }
-  try{ localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(UI_KEY); }catch(e){}
-  try{ }catch(e){}
+  if(!keepLocal){ try{ localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(UI_KEY); }catch(e){} }
   driveAccessToken = null; pubToken = null;
-  document.body.innerHTML = '<div style="font-family:inherit;direction:rtl;text-align:center;padding:60px 20px;color:#1f4e79;"><h2>تم الخروج وحفظ ملفك في حسابك ✓</h2><p style="color:#667;">لفتح ملفك مرة أخرى: افتح الرابط واضغط «ربط Google Drive».</p><button onclick="location.reload()" style="margin-top:14px;padding:10px 22px;border-radius:10px;border:0;background:#1f4e79;color:#fff;font-size:15px;cursor:pointer;">العودة للبرنامج</button></div>';
+  const msg = keepLocal ? 'تم الخروج ✓<br><small style="color:#667;font-size:14px;">بقيت نسخة من ملفك على هذا الجهاز.</small>' : 'تم الخروج وحفظ ملفك في حسابك ✓';
+  document.body.innerHTML = '<div style="font-family:inherit;direction:rtl;text-align:center;padding:60px 20px;color:#1f4e79;"><h2>'+msg+'</h2><p style="color:#667;">لفتح ملفك مرة أخرى: افتح الرابط'+(keepLocal?'.':' واضغط «ربط Google Drive».')+'</p><button onclick="location.reload()" style="margin-top:14px;padding:10px 22px;border-radius:10px;border:0;background:#1f4e79;color:#fff;font-size:15px;cursor:pointer;">العودة للبرنامج</button></div>';
 }
 
 // init
